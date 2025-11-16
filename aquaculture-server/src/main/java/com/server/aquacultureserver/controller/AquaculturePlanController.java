@@ -1,6 +1,7 @@
 package com.server.aquacultureserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.server.aquacultureserver.annotation.RequiresRole;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.AquaculturePlan;
 import com.server.aquacultureserver.service.AquaculturePlanService;
@@ -58,6 +59,7 @@ public class AquaculturePlanController {
      * 新增计划
      */
     @PostMapping
+    @RequiresRole({1, 2, 3}) // 系统管理员、部门管理员、普通操作员
     public Result<Boolean> savePlan(@RequestBody AquaculturePlan plan) {
         try {
             boolean success = planService.savePlan(plan);
@@ -71,6 +73,7 @@ public class AquaculturePlanController {
      * 更新计划
      */
     @PutMapping
+    @RequiresRole({1, 2, 3}) // 系统管理员、部门管理员、普通操作员
     public Result<Boolean> updatePlan(@RequestBody AquaculturePlan plan) {
         try {
             boolean success = planService.updatePlan(plan);
@@ -84,6 +87,7 @@ public class AquaculturePlanController {
      * 删除计划
      */
     @DeleteMapping("/{planId}")
+    @RequiresRole({1, 2}) // 系统管理员、部门管理员
     public Result<Boolean> deletePlan(@PathVariable Long planId) {
         try {
             boolean success = planService.deletePlan(planId);
@@ -97,6 +101,7 @@ public class AquaculturePlanController {
      * 审批计划
      */
     @PostMapping("/approve")
+    @RequiresRole({1, 2}) // 系统管理员、部门管理员
     public Result<Boolean> approvePlan(@RequestBody Map<String, Object> params) {
         try {
             Long planId = Long.valueOf(params.get("planId").toString());

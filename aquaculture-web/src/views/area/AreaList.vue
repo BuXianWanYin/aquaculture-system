@@ -28,21 +28,25 @@
         </el-form-item>
       </el-form>
       
-      <el-table :data="tableData" v-loading="loading" border stripe>
+      <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
         <el-table-column type="index" label="序号" width="60" />
-        <el-table-column prop="areaCode" label="区域编号" width="120" />
-        <el-table-column prop="areaName" label="区域名称" width="150" />
-        <el-table-column prop="areaSize" label="面积(㎡)" width="120" />
-        <el-table-column prop="location" label="位置" />
-        <el-table-column prop="waterQuality" label="水质类型" width="120" />
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column prop="areaCode" label="区域编号" min-width="120" />
+        <el-table-column prop="areaName" label="区域名称" min-width="150" />
+        <el-table-column prop="areaSize" label="面积(㎡)" min-width="120" />
+        <el-table-column prop="location" label="位置" min-width="200" />
+        <el-table-column prop="waterQuality" label="水质类型" min-width="120" />
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'info'">
               {{ row.status === 1 ? '在用' : '闲置' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="createTime" label="创建时间" min-width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
@@ -110,6 +114,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getAreaList, saveArea, updateArea, deleteArea } from '@/api/area'
+import { formatDateTime } from '@/utils/date'
 
 const loading = ref(false)
 const tableData = ref([])

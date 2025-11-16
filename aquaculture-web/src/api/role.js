@@ -38,3 +38,10 @@ export const deleteRole = (roleId) => {
   })
 }
 
+export const getAllRoles = () => {
+  return request({
+    url: '/role/all',
+    method: 'get'
+  })
+}
+

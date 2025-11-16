@@ -23,18 +23,22 @@
       </el-form>
       
       <!-- 角色表格 -->
-      <el-table :data="tableData" v-loading="loading" border stripe>
+      <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
         <el-table-column type="index" label="序号" width="60" />
-        <el-table-column prop="roleName" label="角色名称" width="150" />
-        <el-table-column prop="roleDesc" label="角色描述" />
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column prop="roleName" label="角色名称" min-width="150" />
+        <el-table-column prop="roleDesc" label="角色描述" min-width="200" />
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">
               {{ row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="createTime" label="创建时间" min-width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
@@ -95,6 +99,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getRoleList, saveRole, updateRole, deleteRole } from '@/api/role'
+import { formatDateTime } from '@/utils/date'
 
 const loading = ref(false)
 const tableData = ref([])

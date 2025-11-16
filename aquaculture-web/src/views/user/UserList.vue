@@ -19,8 +19,12 @@
         <el-form-item label="角色">
           <el-select v-model="searchForm.roleId" placeholder="请选择角色" clearable style="width: 200px;">
             <el-option label="全部" value="" />
-            <el-option label="管理员" :value="1" />
-            <el-option label="普通用户" :value="2" />
+            <el-option 
+              v-for="role in roleList" 
+              :key="role.roleId" 
+              :label="role.roleName" 
+              :value="role.roleId" 
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -30,20 +34,24 @@
       </el-form>
       
       <!-- 用户表格 -->
-      <el-table :data="tableData" v-loading="loading" border stripe>
+      <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
         <el-table-column type="index" label="序号" width="60" />
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="realName" label="真实姓名" width="120" />
-        <el-table-column prop="roleName" label="角色" width="120" />
-        <el-table-column prop="phone" label="联系方式" width="150" />
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column prop="realName" label="真实姓名" min-width="120" />
+        <el-table-column prop="roleName" label="角色" min-width="120" />
+        <el-table-column prop="phone" label="联系方式" min-width="150" />
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">
               {{ row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="createTime" label="创建时间" min-width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
@@ -91,8 +99,12 @@
         </el-form-item>
         <el-form-item label="角色" prop="roleId">
           <el-select v-model="userForm.roleId" placeholder="请选择角色" style="width: 100%;">
-            <el-option label="管理员" :value="1" />
-            <el-option label="普通用户" :value="2" />
+            <el-option 
+              v-for="role in roleList" 
+              :key="role.roleId" 
+              :label="role.roleName" 
+              :value="role.roleId" 
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="联系方式" prop="phone">
@@ -120,9 +132,12 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserList, saveUser, updateUser, deleteUser, resetPassword } from '@/api/user'
+import { getAllRoles } from '@/api/role'
+import { formatDateTime } from '@/utils/date'
 
 const loading = ref(false)
 const tableData = ref([])
+const roleList = ref([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增用户')
 const isEdit = ref(false)
@@ -318,8 +333,21 @@ const handleCurrentChange = () => {
   loadData()
 }
 
+// 加载角色列表
+const loadRoleList = async () => {
+  try {
+    const res = await getAllRoles()
+    if (res.code === 200) {
+      roleList.value = res.data || []
+    }
+  } catch (error) {
+    ElMessage.error('加载角色列表失败')
+  }
+}
+
 onMounted(() => {
   loadData()
+  loadRoleList()
 })
 </script>
 

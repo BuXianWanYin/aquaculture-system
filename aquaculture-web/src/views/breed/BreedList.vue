@@ -28,13 +28,13 @@
         </el-form-item>
       </el-form>
       
-      <el-table :data="tableData" v-loading="loading" border stripe>
+      <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
         <el-table-column type="index" label="序号" width="60" />
-        <el-table-column prop="breedName" label="品种名称" width="150" />
-        <el-table-column prop="category" label="品类" width="100" />
-        <el-table-column prop="growthCycle" label="生长周期(天)" width="120" />
-        <el-table-column prop="unit" label="单位" width="80" />
-        <el-table-column label="适宜水温" width="150">
+        <el-table-column prop="breedName" label="品种名称" min-width="150" />
+        <el-table-column prop="category" label="品类" min-width="100" />
+        <el-table-column prop="growthCycle" label="生长周期(天)" min-width="120" />
+        <el-table-column prop="unit" label="单位" width="100" />
+        <el-table-column label="适宜水温" min-width="150">
           <template #default="{ row }">
             <span v-if="row.suitableTempMin && row.suitableTempMax">
               {{ row.suitableTempMin }}℃ - {{ row.suitableTempMax }}℃
@@ -42,14 +42,18 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">
               {{ row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="createTime" label="创建时间" min-width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
@@ -127,6 +131,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getBreedList, saveBreed, updateBreed, deleteBreed } from '@/api/breed'
+import { formatDateTime } from '@/utils/date'
 
 const loading = ref(false)
 const tableData = ref([])

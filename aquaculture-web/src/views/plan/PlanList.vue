@@ -32,15 +32,19 @@
         </el-form-item>
       </el-form>
       
-      <el-table :data="tableData" v-loading="loading" border stripe>
+      <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
         <el-table-column type="index" label="序号" width="60" />
-        <el-table-column prop="planName" label="计划名称" width="180" />
+        <el-table-column prop="planName" label="计划名称" min-width="180" />
         <el-table-column prop="areaId" label="区域ID" width="100" />
         <el-table-column prop="breedId" label="品种ID" width="100" />
-        <el-table-column prop="targetYield" label="目标产量(kg)" width="120" />
-        <el-table-column prop="releaseAmount" label="投放量(kg)" width="120" />
+        <el-table-column prop="targetYield" label="目标产量(kg)" min-width="120" />
+        <el-table-column prop="releaseAmount" label="投放量(kg)" min-width="120" />
         <el-table-column prop="cycleDays" label="周期(天)" width="100" />
-        <el-table-column prop="startDate" label="开始日期" width="120" />
+        <el-table-column prop="startDate" label="开始日期" min-width="120">
+          <template #default="{ row }">
+            {{ formatDate(row.startDate) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.status === 0" type="warning">待审批</el-tag>
@@ -51,7 +55,11 @@
             <el-tag v-else-if="row.status === 5">已取消</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="createTime" label="创建时间" min-width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
@@ -123,7 +131,13 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="开始日期" prop="startDate">
-              <el-date-picker v-model="planForm.startDate" type="date" style="width: 100%;" />
+              <el-date-picker 
+                v-model="planForm.startDate" 
+                type="date" 
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                style="width: 100%;" 
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -207,6 +221,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getPlanList, savePlan, updatePlan, deletePlan, approvePlan } from '@/api/plan'
 import { saveAdjust } from '@/api/planAdjust'
 import { useUserStore } from '@/stores/user'
+import { formatDateTime, formatDate } from '@/utils/date'
 
 const loading = ref(false)
 const tableData = ref([])

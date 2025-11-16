@@ -19,8 +19,16 @@ export const useUserStore = defineStore('user', () => {
   const loginAction = async (loginData) => {
     const res = await login(loginData)
     if (res.code === 200) {
-      setToken('mock-token-' + Date.now())
-      setUserInfo(res.data)
+      // 使用后端返回的JWT token
+      if (res.data && res.data.token) {
+        setToken(res.data.token)
+        // 保存用户信息（不包含token）
+        const userInfo = { ...res.data }
+        delete userInfo.token
+        setUserInfo(userInfo)
+      } else {
+        throw new Error('登录失败：未获取到token')
+      }
       return true
     }
     throw new Error(res.message || '登录失败')

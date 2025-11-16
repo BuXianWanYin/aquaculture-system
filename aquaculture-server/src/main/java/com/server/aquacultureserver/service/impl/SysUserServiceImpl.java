@@ -9,6 +9,7 @@ import com.server.aquacultureserver.dto.UserDTO;
 import com.server.aquacultureserver.mapper.SysRoleMapper;
 import com.server.aquacultureserver.mapper.SysUserMapper;
 import com.server.aquacultureserver.service.SysUserService;
+import com.server.aquacultureserver.utils.JwtUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,9 @@ public class SysUserServiceImpl implements SysUserService {
     
     @Autowired
     private SysRoleMapper roleMapper;
+    
+    @Autowired
+    private JwtUtil jwtUtil;
     
     /**
      * 密码加密
@@ -63,6 +67,10 @@ public class SysUserServiceImpl implements SysUserService {
         if (role != null) {
             userDTO.setRoleName(role.getRoleName());
         }
+        
+        // 生成JWT token
+        String token = jwtUtil.generateToken(user.getUserId(), user.getUsername(), user.getRoleId());
+        userDTO.setToken(token);
         
         return userDTO;
     }

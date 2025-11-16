@@ -16,15 +16,15 @@
           <el-icon><House /></el-icon>
           <span>首页</span>
         </el-menu-item>
-        <el-menu-item index="/user">
+        <el-menu-item index="/user" v-if="canAccess([1, 2])">
           <el-icon><User /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
-        <el-menu-item index="/role">
+        <el-menu-item index="/role" v-if="canAccess([1])">
           <el-icon><UserFilled /></el-icon>
           <span>角色管理</span>
         </el-menu-item>
-        <el-sub-menu index="base">
+        <el-sub-menu index="base" v-if="canAccess([1, 2, 3])">
           <template #title>
             <el-icon><Setting /></el-icon>
             <span>基础数据管理</span>
@@ -42,7 +42,7 @@
             <span>设备管理</span>
           </el-menu-item>
         </el-sub-menu>
-        <el-menu-item index="/plan">
+        <el-menu-item index="/plan" v-if="canAccess([1, 2, 3, 4])">
           <el-icon><Document /></el-icon>
           <span>养殖计划管理</span>
         </el-menu-item>
@@ -83,6 +83,18 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import {
+  House,
+  User,
+  UserFilled,
+  Setting,
+  Collection,
+  MapLocation,
+  Tools,
+  Avatar,
+  ArrowDown,
+  Document
+} from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -90,6 +102,12 @@ const userStore = useUserStore()
 
 const activeMenu = computed(() => route.path)
 const currentTitle = computed(() => route.meta?.title || '首页')
+
+// 权限检查函数
+const canAccess = (roles) => {
+  if (!roles || !userStore.userInfo) return true
+  return roles.includes(userStore.userInfo.roleId)
+}
 
 const handleCommand = (command) => {
   if (command === 'logout') {
