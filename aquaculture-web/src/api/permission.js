@@ -120,9 +120,9 @@ export const assignPermissionsToRole = (roleId, permissionIds) => {
   return request({
     url: '/permission/assign',
     method: 'post',
-    params: {
+    data: {
       roleId: roleId,
-      permissionIds: permissionIds
+      permissionIds: permissionIds || []
     }
   })
 }

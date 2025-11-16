@@ -31,6 +31,8 @@ public class SysUser {
     
     private Long farmId;
     
+    private Long areaId;
+    
     private String phone;
     
     private String address;

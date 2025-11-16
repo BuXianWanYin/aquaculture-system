@@ -27,6 +27,19 @@ export const getUserList = (params) => {
 }
 
 /**
+ * 获取用户列表（用于下拉选择，普通操作员可用）
+ * @param {Object} params - 查询参数 {areaId}
+ * @returns {Promise} 返回用户列表
+ */
+export const getUserListForSelect = (params) => {
+  return request({
+    url: '/user/list',
+    method: 'get',
+    params
+  })
+}
+
+/**
  * 根据用户ID查询用户详情
  * @param {Number} userId - 用户ID
  * @returns {Promise} 返回用户信息
@@ -99,6 +112,83 @@ export const resetPassword = (data) => {
     url: '/user/resetPassword',
     method: 'post',
     params: data
+  })
+}
+
+/**
+ * 用户注册
+ * @param {Object} data - 注册数据 {username, password, realName, roleId, phone, address, farmId}
+ * @returns {Promise} 返回操作结果
+ */
+export const register = (data) => {
+  return request({
+    url: '/user/register',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 获取当前登录用户信息
+ * @returns {Promise} 返回当前用户信息
+ */
+export const getCurrentUser = () => {
+  return request({
+    url: '/user/current',
+    method: 'get'
+  })
+}
+
+/**
+ * 更新个人信息
+ * @param {Object} data - 用户数据 {userId, realName, phone, address, farmId, avatar}
+ * @returns {Promise} 返回操作结果
+ */
+export const updateProfile = (data) => {
+  return request({
+    url: '/user/profile',
+    method: 'put',
+    data
+  })
+}
+
+/**
+ * 上传头像
+ * @param {FormData} formData - 包含file的FormData
+ * @returns {Promise} 返回文件信息
+ */
+export const uploadAvatar = (formData) => {
+  return request({
+    url: '/upload/avatar',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+/**
+ * 查询待审核用户列表
+ * @returns {Promise} 返回待审核用户列表
+ */
+export const getPendingUsers = () => {
+  return request({
+    url: '/user/pending',
+    method: 'get'
+  })
+}
+
+/**
+ * 审核用户（通过或拒绝）
+ * @param {Object} params - 审核参数 {userId, status, farmId, remark}
+ * @returns {Promise} 返回操作结果
+ */
+export const approveUser = (params) => {
+  return request({
+    url: '/user/approve',
+    method: 'post',
+    params
   })
 }
 

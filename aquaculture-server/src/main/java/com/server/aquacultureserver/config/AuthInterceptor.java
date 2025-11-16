@@ -23,6 +23,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     // 不需要认证的路径
     private static final String[] WHITE_LIST = {
         "/api/user/login",
+        "/api/user/register",
         "/error"
     };
     

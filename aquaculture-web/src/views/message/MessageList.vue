@@ -4,9 +4,8 @@
       <template #header>
         <div class="card-header">
           <div>
-            <span>消息通知</span>
             <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="unread-badge">
-              <span style="margin-left: 10px; color: #909399;">未读消息</span>
+              <span>消息通知</span>
             </el-badge>
           </div>
           <div>
@@ -453,7 +452,7 @@ onMounted(() => {
 }
 
 .unread-badge {
-  margin-left: 10px;
+  margin-right: 10px;
 }
 
 .search-form {

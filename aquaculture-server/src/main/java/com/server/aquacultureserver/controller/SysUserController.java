@@ -3,17 +3,25 @@ package com.server.aquacultureserver.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.aquacultureserver.annotation.RequiresRole;
 import com.server.aquacultureserver.common.Result;
+import com.server.aquacultureserver.domain.SysMessage;
 import com.server.aquacultureserver.domain.SysOperLog;
+import com.server.aquacultureserver.domain.SysPermission;
+import com.server.aquacultureserver.domain.SysRole;
 import com.server.aquacultureserver.domain.SysUser;
 import com.server.aquacultureserver.dto.LoginDTO;
 import com.server.aquacultureserver.dto.UserDTO;
+import com.server.aquacultureserver.mapper.SysRoleMapper;
+import com.server.aquacultureserver.service.BaseAreaService;
+import com.server.aquacultureserver.service.SysMessageService;
 import com.server.aquacultureserver.service.SysOperLogService;
+import com.server.aquacultureserver.service.SysPermissionService;
 import com.server.aquacultureserver.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 用户控制器
@@ -28,6 +36,18 @@ public class SysUserController {
     
     @Autowired
     private SysOperLogService operLogService;
+    
+    @Autowired
+    private SysMessageService messageService;
+    
+    @Autowired
+    private SysPermissionService permissionService;
+    
+    @Autowired
+    private SysRoleMapper roleMapper;
+    
+    @Autowired
+    private BaseAreaService areaService;
     
     /**
      * 用户登录
@@ -156,6 +176,17 @@ public class SysUserController {
     }
     
     /**
+     * 获取用户列表（用于下拉选择，普通操作员可用）
+     * 普通操作员只能看到自己区域的用户
+     */
+    @GetMapping("/list")
+    public Result<List<SysUser>> getUserList(
+            @RequestParam(required = false) Long areaId) {
+        List<SysUser> users = userService.getUserListForSelect(areaId);
+        return Result.success(users);
+    }
+    
+    /**
      * 新增用户
      */
     @PostMapping
@@ -224,6 +255,216 @@ public class SysUserController {
         try {
             boolean success = userService.resetPassword(userId, newPassword);
             return Result.success("密码重置成功", success);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 用户注册
+     */
+    @PostMapping("/register")
+    public Result<Boolean> register(@RequestBody SysUser user) {
+        try {
+            // 注册时只能选择普通操作员或决策层角色
+            if (user.getRoleId() == null) {
+                return Result.error("请选择角色");
+            }
+            if (user.getRoleId() == 1 || user.getRoleId() == 2) {
+                return Result.error("不允许注册管理员角色");
+            }
+            
+            // 注册时不设置部门，由管理员审核时分配
+            user.setFarmId(null);
+            // status会在saveUser中设置为2（待审核）
+            
+            boolean success = userService.saveUser(user);
+            
+            if (success) {
+                // 发送消息通知给所有管理员
+                List<Long> adminUserIds = userService.getAllAdminUserIds();
+                String roleName = user.getRoleId() == 3 ? "普通操作员" : "决策层";
+                
+                // 获取注册的用户ID（插入后自动生成）
+                SysUser registeredUser = userService.getByUsername(user.getUsername());
+                
+                for (Long adminId : adminUserIds) {
+                    SysMessage message = new SysMessage();
+                    message.setReceiverId(adminId);
+                    message.setSenderId(0L); // 0表示系统
+                    message.setMessageTitle("新用户注册待审核");
+                    message.setMessageContent(String.format("用户【%s】（%s）已注册，等待审核。用户名：%s，真实姓名：%s，联系方式：%s", 
+                        user.getRealName() != null && !user.getRealName().isEmpty() ? user.getRealName() : user.getUsername(),
+                        roleName,
+                        user.getUsername(),
+                        user.getRealName() != null && !user.getRealName().isEmpty() ? user.getRealName() : "未填写",
+                        user.getPhone() != null && !user.getPhone().isEmpty() ? user.getPhone() : "未填写"));
+                    message.setMessageType("通知");
+                    message.setBusinessType("user");
+                    message.setBusinessId(registeredUser != null ? registeredUser.getUserId() : null);
+                    message.setStatus(0); // 未读
+                    messageService.sendMessage(message);
+                }
+            }
+            
+            return Result.success("注册成功！您选择的角色已自动分配对应权限，请等待管理员审核并分配所属区域后即可登录", success);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 更新个人信息（用户自己修改）
+     */
+    @PutMapping("/profile")
+    public Result<Boolean> updateProfile(@RequestBody SysUser user, HttpServletRequest request) {
+        try {
+            // 从请求中获取当前用户ID
+            Object userIdObj = request.getAttribute("userId");
+            if (userIdObj == null) {
+                return Result.error("未获取到用户信息");
+            }
+            Long currentUserId = Long.valueOf(userIdObj.toString());
+            
+            // 只能修改自己的信息
+            if (!currentUserId.equals(user.getUserId())) {
+                return Result.error("只能修改自己的信息");
+            }
+            
+            // 不允许修改用户名、角色、密码（密码单独接口修改）
+            SysUser existingUser = userService.getById(currentUserId);
+            if (existingUser == null) {
+                return Result.error("用户不存在");
+            }
+            
+            // 只允许修改：真实姓名、所属养殖区域、联系方式、家庭地址、头像
+            existingUser.setRealName(user.getRealName());
+            // 支持areaId（优先）和farmId（兼容旧数据）
+            if (user.getAreaId() != null) {
+                existingUser.setAreaId(user.getAreaId());
+            } else if (user.getFarmId() != null) {
+                // 兼容：如果没有areaId但有farmId，将farmId作为areaId使用
+                existingUser.setAreaId(user.getFarmId());
+            } else {
+                // 如果传入了null，清空区域
+                existingUser.setAreaId(null);
+            }
+            existingUser.setPhone(user.getPhone());
+            existingUser.setAddress(user.getAddress());
+            if (user.getAvatar() != null) {
+                existingUser.setAvatar(user.getAvatar());
+            }
+            
+            boolean success = userService.updateUser(existingUser);
+            return Result.success("更新成功", success);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取当前登录用户信息
+     */
+    @GetMapping("/current")
+    public Result<UserDTO> getCurrentUser(HttpServletRequest request) {
+        try {
+            Object userIdObj = request.getAttribute("userId");
+            if (userIdObj == null) {
+                return Result.error("未获取到用户信息");
+            }
+            Long userId = Long.valueOf(userIdObj.toString());
+            SysUser user = userService.getById(userId);
+            
+            // 转换为UserDTO并添加权限信息
+            UserDTO userDTO = new UserDTO();
+            org.springframework.beans.BeanUtils.copyProperties(user, userDTO);
+            
+            // 查询角色信息
+            SysRole role = roleMapper.selectById(user.getRoleId());
+            if (role != null) {
+                userDTO.setRoleName(role.getRoleName());
+            }
+            
+            // 查询用户权限列表
+            List<SysPermission> permissions = permissionService.getPermissionsByRoleId(user.getRoleId());
+            List<String> permissionCodes = permissions.stream()
+                .map(SysPermission::getPermissionCode)
+                .collect(java.util.stream.Collectors.toList());
+            userDTO.setPermissions(permissionCodes);
+            
+            // 设置区域ID（兼容farmId）
+            userDTO.setAreaId(user.getAreaId() != null ? user.getAreaId() : user.getFarmId());
+            
+            return Result.success(userDTO);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 审核用户（通过或拒绝）
+     */
+    @PostMapping("/approve")
+    @RequiresRole({1}) // 仅系统管理员
+    public Result<Boolean> approveUser(
+            @RequestParam Long userId,
+            @RequestParam Integer status, // 1-通过，0-拒绝
+            @RequestParam(required = false) Long farmId, // 兼容旧参数名，实际是areaId
+            @RequestParam(required = false) Long areaId, // 新参数名
+            @RequestParam(required = false) String remark,
+            HttpServletRequest request) {
+        try {
+            Object currentUserIdObj = request.getAttribute("userId");
+            Long currentUserId = currentUserIdObj != null ? Long.valueOf(currentUserIdObj.toString()) : null;
+            
+            // 优先使用areaId，如果没有则使用farmId（兼容）
+            Long finalAreaId = areaId != null ? areaId : farmId;
+            
+            boolean success = userService.approveUser(userId, status, finalAreaId, remark);
+            
+            if (success) {
+                // 获取区域名称（如果有分配区域）
+                String areaName = null;
+                if (finalAreaId != null) {
+                    com.server.aquacultureserver.domain.BaseArea area = areaService.getById(finalAreaId);
+                    if (area != null) {
+                        areaName = area.getAreaName();
+                    }
+                }
+                
+                // 发送消息通知给被审核的用户
+                SysMessage message = new SysMessage();
+                message.setReceiverId(userId);
+                message.setSenderId(currentUserId != null ? currentUserId : 1L);
+                message.setMessageTitle(status == 1 ? "账号审核通过" : "账号审核未通过");
+                message.setMessageContent(status == 1 
+                    ? String.format("您的账号已通过审核，可以正常登录使用。%s%s", 
+                        areaName != null ? "已分配区域：" + areaName + "。" : "",
+                        remark != null && !remark.isEmpty() ? "备注：" + remark : "")
+                    : String.format("很抱歉，您的账号审核未通过。%s", 
+                        remark != null && !remark.isEmpty() ? "原因：" + remark : ""));
+                message.setMessageType("通知");
+                message.setBusinessType("user");
+                message.setBusinessId(userId);
+                message.setStatus(0); // 未读
+                messageService.sendMessage(message);
+            }
+            
+            return Result.success(status == 1 ? "审核通过" : "审核拒绝", success);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 查询待审核用户列表
+     */
+    @GetMapping("/pending")
+    @RequiresRole({1}) // 仅系统管理员
+    public Result<List<SysUser>> getPendingUsers() {
+        try {
+            List<SysUser> users = userService.getPendingUsers();
+            return Result.success(users);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

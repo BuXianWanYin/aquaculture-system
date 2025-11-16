@@ -148,5 +148,71 @@ public class FileUploadController {
             return ResponseEntity.notFound().build();
         }
     }
+    
+    /**
+     * 上传用户头像
+     */
+    @PostMapping("/avatar")
+    public Result<Map<String, Object>> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return Result.error("文件不能为空");
+            }
+            
+            // 检查文件类型（只允许图片）
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return Result.error("只能上传图片文件");
+            }
+            
+            // 检查文件大小（限制5MB）
+            if (file.getSize() > 5 * 1024 * 1024) {
+                return Result.error("图片大小不能超过5MB");
+            }
+            
+            // 获取文件原始名称
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || originalFilename.isEmpty()) {
+                return Result.error("文件名不能为空");
+            }
+            
+            // 获取文件扩展名
+            String extension = "";
+            int lastDotIndex = originalFilename.lastIndexOf(".");
+            if (lastDotIndex > 0) {
+                extension = originalFilename.substring(lastDotIndex);
+            }
+            
+            // 生成新的文件名（UUID + 扩展名）
+            String newFilename = UUID.randomUUID().toString() + extension;
+            
+            // 按日期创建目录结构：uploads/avatar/YYYY/MM/
+            LocalDate now = LocalDate.now();
+            String datePath = now.format(DateTimeFormatter.ofPattern("yyyy/MM"));
+            String directory = uploadPath + "/avatar/" + datePath;
+            
+            // 创建目录
+            File dir = new File(directory);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            
+            // 保存文件
+            String filePath = directory + "/" + newFilename;
+            Path path = Paths.get(filePath);
+            Files.write(path, file.getBytes());
+            
+            // 返回文件信息
+            Map<String, Object> fileInfo = new HashMap<>();
+            fileInfo.put("filePath", "/uploads/avatar/" + datePath + "/" + newFilename);
+            fileInfo.put("fileType", contentType);
+            fileInfo.put("fileSize", file.getSize());
+            fileInfo.put("originalFilename", originalFilename);
+            
+            return Result.success("上传成功", fileInfo);
+        } catch (IOException e) {
+            return Result.error("文件上传失败：" + e.getMessage());
+        }
+    }
 }
 

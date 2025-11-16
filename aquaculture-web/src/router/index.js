@@ -10,6 +10,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/Register.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/',
     component: () => import('@/layout/Index.vue'),
     redirect: '/dashboard',
@@ -86,6 +92,12 @@ const routes = [
         name: 'Message',
         component: () => import('@/views/message/MessageList.vue'),
         meta: { title: '消息通知', roles: [1, 2, 3, 4] }
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/profile/Profile.vue'),
+        meta: { title: '个人信息', roles: [1, 2, 3, 4] }
       }
     ]
   }

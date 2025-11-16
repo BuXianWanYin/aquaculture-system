@@ -78,7 +78,7 @@ public class YieldStatisticsController {
      * 更新产量统计
      */
     @PutMapping
-    @RequiresRole({1, 2, 3}) // 系统管理员、部门管理员、普通操作员
+    @RequiresRole({1, 2}) // 系统管理员、部门管理员（普通操作员不能编辑）
     public Result<Boolean> updateStatistics(@RequestBody YieldStatistics statistics) {
         try {
             boolean success = statisticsService.updateStatistics(statistics);

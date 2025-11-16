@@ -418,7 +418,7 @@ import { getEvidenceList, deleteEvidence, uploadEvidence, saveEvidence } from '@
 import { getAllPlans } from '@/api/plan'
 import { getAllAreas } from '@/api/area'
 import { getAllBreeds } from '@/api/breed'
-import { getUserList } from '@/api/user'
+import { getUserListForSelect } from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import { formatDateTime, formatDate } from '@/utils/date'
 
@@ -1116,9 +1116,9 @@ const loadBreedList = async () => {
 // 加载用户列表
 const loadUserList = async () => {
   try {
-    const res = await getUserList({ current: 1, size: 1000 })
+    const res = await getUserListForSelect()
     if (res.code === 200) {
-      userList.value = res.data?.records || []
+      userList.value = res.data || []
     }
   } catch (error) {
     console.error('加载用户列表失败', error)

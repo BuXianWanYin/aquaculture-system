@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.aquacultureserver.annotation.RequiresRole;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.SysPermission;
+import com.server.aquacultureserver.dto.AssignPermissionDTO;
 import com.server.aquacultureserver.service.SysPermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -127,11 +128,21 @@ public class SysPermissionController {
      */
     @PostMapping("/assign")
     @RequiresRole({1}) // 仅系统管理员
-    public Result<Boolean> assignPermissionsToRole(
-            @RequestParam Long roleId,
-            @RequestParam Long[] permissionIds) {
+    public Result<Boolean> assignPermissionsToRole(@RequestBody AssignPermissionDTO dto) {
         try {
-            boolean success = permissionService.assignPermissionsToRole(roleId, permissionIds);
+            if (dto == null || dto.getRoleId() == null) {
+                return Result.error("角色ID不能为空");
+            }
+            
+            Long[] permissionIds = null;
+            if (dto.getPermissionIds() != null && !dto.getPermissionIds().isEmpty()) {
+                permissionIds = dto.getPermissionIds().toArray(new Long[0]);
+            } else {
+                // 如果没有传递权限ID，设置为空数组（清空所有权限）
+                permissionIds = new Long[0];
+            }
+            
+            boolean success = permissionService.assignPermissionsToRole(dto.getRoleId(), permissionIds);
             return Result.success("分配成功", success);
         } catch (Exception e) {
             return Result.error(e.getMessage());

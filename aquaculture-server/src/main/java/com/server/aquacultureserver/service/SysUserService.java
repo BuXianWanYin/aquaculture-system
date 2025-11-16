@@ -61,5 +61,26 @@ public interface SysUserService {
      * 统计用户总数
      */
     long count();
+    
+    /**
+     * 审核用户（通过或拒绝）
+     */
+    boolean approveUser(Long userId, Integer status, Long farmId, String remark);
+    
+    /**
+     * 获取所有管理员用户ID列表
+     */
+    java.util.List<Long> getAllAdminUserIds();
+    
+    /**
+     * 查询待审核用户列表
+     */
+    java.util.List<SysUser> getPendingUsers();
+    
+    /**
+     * 获取用户列表（用于下拉选择）
+     * 普通操作员只能看到自己区域的用户
+     */
+    java.util.List<SysUser> getUserListForSelect(Long areaId);
 }
 

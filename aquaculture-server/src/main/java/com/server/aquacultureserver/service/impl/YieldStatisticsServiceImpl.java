@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.aquacultureserver.domain.YieldStatistics;
 import com.server.aquacultureserver.mapper.YieldStatisticsMapper;
 import com.server.aquacultureserver.service.YieldStatisticsService;
+import com.server.aquacultureserver.utils.UserContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,10 +24,20 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
     
     @Override
     public List<YieldStatistics> getAllStatistics() {
-        return statisticsMapper.selectList(
-            new LambdaQueryWrapper<YieldStatistics>()
-                .orderByDesc(YieldStatistics::getCreateTime)
-        );
+        LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
+        
+        // 普通操作员只能查看自己区域的产量
+        if (UserContext.isOperator()) {
+            Long areaId = UserContext.getCurrentUserAreaId();
+            if (areaId != null) {
+                wrapper.eq(YieldStatistics::getAreaId, areaId);
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        
+        wrapper.orderByDesc(YieldStatistics::getCreateTime);
+        return statisticsMapper.selectList(wrapper);
     }
     
     @Override
@@ -37,6 +49,16 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
     public Page<YieldStatistics> getPage(Integer current, Integer size, Long planId, Long areaId, Long breedId, Integer status) {
         Page<YieldStatistics> page = new Page<>(current, size);
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
+        
+        // 普通操作员只能查看自己区域的产量
+        if (UserContext.isOperator()) {
+            Long userAreaId = UserContext.getCurrentUserAreaId();
+            if (userAreaId != null) {
+                wrapper.eq(YieldStatistics::getAreaId, userAreaId);
+            } else {
+                return page;
+            }
+        }
         
         if (planId != null) {
             wrapper.eq(YieldStatistics::getPlanId, planId);
@@ -57,6 +79,15 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
     
     @Override
     public boolean saveStatistics(YieldStatistics statistics) {
+        // 普通操作员只能创建自己区域的产量
+        if (UserContext.isOperator()) {
+            Long userAreaId = UserContext.getCurrentUserAreaId();
+            if (userAreaId == null) {
+                throw new RuntimeException("您尚未分配区域，无法创建产量记录");
+            }
+            statistics.setAreaId(userAreaId);
+        }
+        
         // 新记录默认状态为待审核
         if (statistics.getStatus() == null) {
             statistics.setStatus(0);
@@ -66,11 +97,19 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
     
     @Override
     public boolean updateStatistics(YieldStatistics statistics) {
+        // 普通操作员不能编辑产量统计
+        if (UserContext.isOperator()) {
+            throw new RuntimeException("普通操作员无权编辑产量统计");
+        }
         return statisticsMapper.updateById(statistics) > 0;
     }
     
     @Override
     public boolean deleteStatistics(Long yieldId) {
+        // 普通操作员不能删除产量统计
+        if (UserContext.isOperator()) {
+            throw new RuntimeException("普通操作员无权删除产量统计");
+        }
         return statisticsMapper.deleteById(yieldId) > 0;
     }
     

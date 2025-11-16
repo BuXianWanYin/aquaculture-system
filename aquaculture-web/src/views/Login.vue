@@ -41,6 +41,14 @@
             登录
           </el-button>
         </el-form-item>
+        <el-form-item>
+          <div style="text-align: center; margin-top: 10px;">
+            <span style="color: #909399; font-size: 14px;">还没有账号？</span>
+            <el-button type="text" @click="handleRegister" style="padding: 0; margin-left: 5px;">
+              立即注册
+            </el-button>
+          </div>
+        </el-form-item>
       </el-form>
     </div>
   </div>
@@ -90,6 +98,10 @@ const handleLogin = async () => {
       }
     }
   })
+}
+
+const handleRegister = () => {
+  router.push('/register')
 }
 </script>
 
