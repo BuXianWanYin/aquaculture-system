@@ -56,5 +56,10 @@ public interface SysUserService {
      * 重置密码
      */
     boolean resetPassword(Long userId, String newPassword);
+    
+    /**
+     * 统计用户总数
+     */
+    long count();
 }
 

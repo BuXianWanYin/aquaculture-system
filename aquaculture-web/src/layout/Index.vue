@@ -46,6 +46,10 @@
           <el-icon><Document /></el-icon>
           <span>养殖计划管理</span>
         </el-menu-item>
+        <el-menu-item index="/yield" v-if="canAccess([1, 2, 3, 4])">
+          <el-icon><DataAnalysis /></el-icon>
+          <span>产量统计管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
@@ -93,7 +97,8 @@ import {
   Tools,
   Avatar,
   ArrowDown,
-  Document
+  Document,
+  DataAnalysis
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

@@ -8,7 +8,7 @@
               <el-icon size="30"><User /></el-icon>
             </div>
             <div class="stat-content">
-              <div class="stat-value">0</div>
+              <div class="stat-value">{{ statistics.userCount || 0 }}</div>
               <div class="stat-label">用户总数</div>
             </div>
           </div>
@@ -21,7 +21,7 @@
               <el-icon size="30"><Document /></el-icon>
             </div>
             <div class="stat-content">
-              <div class="stat-value">0</div>
+              <div class="stat-value">{{ statistics.planCount || 0 }}</div>
               <div class="stat-label">计划总数</div>
             </div>
           </div>
@@ -34,7 +34,7 @@
               <el-icon size="30"><DataAnalysis /></el-icon>
             </div>
             <div class="stat-content">
-              <div class="stat-value">0</div>
+              <div class="stat-value">{{ statistics.yieldCount || 0 }}</div>
               <div class="stat-label">产量统计</div>
             </div>
           </div>
@@ -47,7 +47,7 @@
               <el-icon size="30"><Warning /></el-icon>
             </div>
             <div class="stat-content">
-              <div class="stat-value">0</div>
+              <div class="stat-value">{{ statistics.pendingPlanCount || 0 }}</div>
               <div class="stat-label">待处理事项</div>
             </div>
           </div>
@@ -63,6 +63,31 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+import { getStatistics } from '@/api/dashboard'
+import { ElMessage } from 'element-plus'
+
+const statistics = ref({
+  userCount: 0,
+  planCount: 0,
+  yieldCount: 0,
+  pendingPlanCount: 0
+})
+
+const loadStatistics = async () => {
+  try {
+    const res = await getStatistics()
+    if (res.code === 200) {
+      statistics.value = res.data || {}
+    }
+  } catch (error) {
+    ElMessage.error('加载统计数据失败')
+  }
+}
+
+onMounted(() => {
+  loadStatistics()
+})
 </script>
 
 <style scoped>

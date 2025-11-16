@@ -101,7 +101,21 @@ public class SysUserServiceImpl implements SysUserService {
         }
         
         wrapper.orderByDesc(SysUser::getCreateTime);
-        return userMapper.selectPage(page, wrapper);
+        Page<SysUser> result = userMapper.selectPage(page, wrapper);
+        
+        // 填充角色名称
+        if (result.getRecords() != null && !result.getRecords().isEmpty()) {
+            for (SysUser user : result.getRecords()) {
+                if (user.getRoleId() != null) {
+                    SysRole role = roleMapper.selectById(user.getRoleId());
+                    if (role != null) {
+                        user.setRoleName(role.getRoleName());
+                    }
+                }
+            }
+        }
+        
+        return result;
     }
     
     @Override
@@ -160,6 +174,11 @@ public class SysUserServiceImpl implements SysUserService {
         
         user.setPassword(encryptPassword(newPassword));
         return userMapper.updateById(user) > 0;
+    }
+    
+    @Override
+    public long count() {
+        return userMapper.selectCount(null);
     }
 }
 

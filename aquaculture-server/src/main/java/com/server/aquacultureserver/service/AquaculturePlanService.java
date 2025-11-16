@@ -44,5 +44,15 @@ public interface AquaculturePlanService {
      * 审批计划
      */
     boolean approvePlan(Long planId, Long approverId, String approveOpinion, Integer status);
+    
+    /**
+     * 统计计划总数
+     */
+    long count();
+    
+    /**
+     * 统计待审批计划数
+     */
+    long countPendingPlans();
 }
 

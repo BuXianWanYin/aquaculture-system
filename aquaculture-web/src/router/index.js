@@ -56,6 +56,12 @@ const routes = [
         name: 'Plan',
         component: () => import('@/views/plan/PlanList.vue'),
         meta: { title: '养殖计划管理', roles: [1, 2, 3, 4] }
+      },
+      {
+        path: 'yield',
+        name: 'Yield',
+        component: () => import('@/views/yield/YieldList.vue'),
+        meta: { title: '产量统计管理', roles: [1, 2, 3, 4] }
       }
     ]
   }

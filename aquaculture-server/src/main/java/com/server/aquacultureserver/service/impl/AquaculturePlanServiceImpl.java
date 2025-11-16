@@ -93,5 +93,18 @@ public class AquaculturePlanServiceImpl implements AquaculturePlanService {
         
         return planMapper.updateById(plan) > 0;
     }
+    
+    @Override
+    public long count() {
+        return planMapper.selectCount(null);
+    }
+    
+    @Override
+    public long countPendingPlans() {
+        return planMapper.selectCount(
+            new LambdaQueryWrapper<AquaculturePlan>()
+                .eq(AquaculturePlan::getStatus, 0)
+        );
+    }
 }
 
