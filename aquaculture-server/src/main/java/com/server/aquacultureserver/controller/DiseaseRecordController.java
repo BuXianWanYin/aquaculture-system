@@ -34,7 +34,7 @@ public class DiseaseRecordController {
      * 分页查询病害记录列表
      */
     @GetMapping("/page")
-    @RequiresPermission({"disease:record:view"})
+    @RequiresPermission({"disease:record:list"})
     public Result<Page<DiseaseRecord>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -51,7 +51,7 @@ public class DiseaseRecordController {
      * 根据ID查询病害记录
      */
     @GetMapping("/{recordId}")
-    @RequiresPermission({"disease:record:view"})
+    @RequiresPermission({"disease:record:detail"})
     public Result<DiseaseRecord> getById(@PathVariable Long recordId) {
         DiseaseRecord record = recordService.getById(recordId);
         return Result.success(record);

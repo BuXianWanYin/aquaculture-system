@@ -34,7 +34,7 @@ public class CustomerController {
      * 分页查询客户列表
      */
     @GetMapping("/page")
-    @RequiresPermission({"sales:customer:view"})
+    @RequiresPermission({"sales:customer:list"})
     public Result<Page<Customer>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -49,7 +49,7 @@ public class CustomerController {
      * 根据ID查询客户
      */
     @GetMapping("/{customerId}")
-    @RequiresPermission({"sales:customer:view"})
+    @RequiresPermission({"sales:customer:detail"})
     public Result<Customer> getById(@PathVariable Long customerId) {
         Customer customer = customerService.getById(customerId);
         return Result.success(customer);

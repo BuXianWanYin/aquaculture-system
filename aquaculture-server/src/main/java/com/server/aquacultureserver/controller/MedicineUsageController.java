@@ -34,7 +34,7 @@ public class MedicineUsageController {
      * 分页查询用药记录列表
      */
     @GetMapping("/page")
-    @RequiresPermission({"disease:medicine:view"})
+    @RequiresPermission({"disease:medicine:list"})
     public Result<Page<MedicineUsage>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -52,7 +52,7 @@ public class MedicineUsageController {
      * 根据病害记录ID查询用药记录列表
      */
     @GetMapping("/record/{recordId}")
-    @RequiresPermission({"disease:medicine:view"})
+    @RequiresPermission({"disease:medicine:list"})
     public Result<List<MedicineUsage>> getByRecordId(@PathVariable Long recordId) {
         List<MedicineUsage> usages = usageService.getByRecordId(recordId);
         return Result.success(usages);
@@ -62,7 +62,7 @@ public class MedicineUsageController {
      * 根据防治记录ID查询用药记录列表
      */
     @GetMapping("/prevention/{preventionId}")
-    @RequiresPermission({"disease:medicine:view"})
+    @RequiresPermission({"disease:medicine:list"})
     public Result<List<MedicineUsage>> getByPreventionId(@PathVariable Long preventionId) {
         List<MedicineUsage> usages = usageService.getByPreventionId(preventionId);
         return Result.success(usages);
@@ -72,7 +72,7 @@ public class MedicineUsageController {
      * 根据ID查询用药记录
      */
     @GetMapping("/{usageId}")
-    @RequiresPermission({"disease:medicine:view"})
+    @RequiresPermission({"disease:medicine:detail"})
     public Result<MedicineUsage> getById(@PathVariable Long usageId) {
         MedicineUsage usage = usageService.getById(usageId);
         return Result.success(usage);

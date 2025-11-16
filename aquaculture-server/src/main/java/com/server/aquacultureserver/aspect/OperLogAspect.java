@@ -218,6 +218,14 @@ public class OperLogAspect {
             return "养殖计划管理";
         } else if (requestURI.contains("/yield")) {
             return "产量统计管理";
+        } else if (requestURI.contains("/feed")) {
+            return "饲料管理";
+        } else if (requestURI.contains("/disease")) {
+            return "病害防控管理";
+        } else if (requestURI.contains("/production")) {
+            return "日常生产记录";
+        } else if (requestURI.contains("/sales")) {
+            return "销售管理";
         } else if (requestURI.contains("/statistic")) {
             return "数据报表与分析";
         } else if (requestURI.contains("/dashboard")) {
@@ -370,6 +378,94 @@ public class OperLogAspect {
                 appendYieldInfoFromParams(content, joinPoint);
             } else if ("GET".equals(method)) {
                 content.append("查询产量统计列表");
+            }
+        } else if (requestURI.contains("/feed")) {
+            if (requestURI.contains("/purchase")) {
+                if ("POST".equals(method)) {
+                    content.append("新增饲料采购记录");
+                } else if ("PUT".equals(method)) {
+                    content.append("修改饲料采购记录");
+                } else if ("DELETE".equals(method)) {
+                    content.append("删除饲料采购记录");
+                }
+            } else if (requestURI.contains("/inventory")) {
+                if ("POST".equals(method)) {
+                    content.append("新增饲料库存记录");
+                } else if ("PUT".equals(method)) {
+                    content.append("修改饲料库存记录");
+                } else if ("DELETE".equals(method)) {
+                    content.append("删除饲料库存记录");
+                }
+            } else if (requestURI.contains("/usage")) {
+                if ("POST".equals(method)) {
+                    content.append("新增饲料使用记录");
+                } else if ("PUT".equals(method)) {
+                    content.append("修改饲料使用记录");
+                } else if ("DELETE".equals(method)) {
+                    content.append("删除饲料使用记录");
+                }
+            }
+        } else if (requestURI.contains("/disease")) {
+            if (requestURI.contains("/record")) {
+                if ("POST".equals(method)) {
+                    content.append("新增病害记录");
+                } else if ("PUT".equals(method)) {
+                    content.append("修改病害记录");
+                } else if ("DELETE".equals(method)) {
+                    content.append("删除病害记录");
+                }
+            } else if (requestURI.contains("/prevention")) {
+                if ("POST".equals(method)) {
+                    content.append("新增病害防治记录");
+                } else if ("PUT".equals(method)) {
+                    content.append("修改病害防治记录");
+                } else if ("DELETE".equals(method)) {
+                    content.append("删除病害防治记录");
+                }
+            } else if (requestURI.contains("/medicine")) {
+                if ("POST".equals(method)) {
+                    content.append("新增用药记录");
+                } else if ("PUT".equals(method)) {
+                    content.append("修改用药记录");
+                } else if ("DELETE".equals(method)) {
+                    content.append("删除用药记录");
+                }
+            }
+        } else if (requestURI.contains("/production")) {
+            if (requestURI.contains("/feeding")) {
+                if ("POST".equals(method)) {
+                    content.append("新增投喂记录");
+                } else if ("PUT".equals(method)) {
+                    content.append("修改投喂记录");
+                } else if ("DELETE".equals(method)) {
+                    content.append("删除投喂记录");
+                }
+            } else if (requestURI.contains("/inspection")) {
+                if ("POST".equals(method)) {
+                    content.append("新增日常检查记录");
+                } else if ("PUT".equals(method)) {
+                    content.append("修改日常检查记录");
+                } else if ("DELETE".equals(method)) {
+                    content.append("删除日常检查记录");
+                }
+            }
+        } else if (requestURI.contains("/sales")) {
+            if (requestURI.contains("/customer")) {
+                if ("POST".equals(method)) {
+                    content.append("新增客户信息");
+                } else if ("PUT".equals(method)) {
+                    content.append("修改客户信息");
+                } else if ("DELETE".equals(method)) {
+                    content.append("删除客户信息");
+                }
+            } else if (requestURI.contains("/record")) {
+                if ("POST".equals(method)) {
+                    content.append("新增销售记录");
+                } else if ("PUT".equals(method)) {
+                    content.append("修改销售记录");
+                } else if ("DELETE".equals(method)) {
+                    content.append("删除销售记录");
+                }
             }
         } else if (requestURI.contains("/statistic")) {
             if ("POST".equals(method)) {

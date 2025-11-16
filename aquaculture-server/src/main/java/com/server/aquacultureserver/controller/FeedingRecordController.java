@@ -34,7 +34,7 @@ public class FeedingRecordController {
      * 分页查询投喂记录列表
      */
     @GetMapping("/page")
-    @RequiresPermission({"production:feeding:view"})
+    @RequiresPermission({"production:feeding:list"})
     public Result<Page<FeedingRecord>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -50,7 +50,7 @@ public class FeedingRecordController {
      * 根据ID查询投喂记录
      */
     @GetMapping("/{recordId}")
-    @RequiresPermission({"production:feeding:view"})
+    @RequiresPermission({"production:feeding:detail"})
     public Result<FeedingRecord> getById(@PathVariable Long recordId) {
         FeedingRecord record = recordService.getById(recordId);
         return Result.success(record);

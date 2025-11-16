@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -24,6 +25,26 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
     @Override
     public List<FeedPurchase> getAllPurchases() {
         LambdaQueryWrapper<FeedPurchase> wrapper = new LambdaQueryWrapper<>();
+        
+        // 普通操作员只能查看自己创建的采购记录
+        if (UserContext.isOperator()) {
+            Long userId = UserContext.getCurrentUserId();
+            if (userId != null) {
+                wrapper.eq(FeedPurchase::getCreatorId, userId);
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        // 部门管理员可以查看其部门下所有用户创建的采购记录
+        else if (UserContext.isDepartmentManager()) {
+            List<Long> userIds = UserContext.getDepartmentManagerUserIds();
+            if (userIds != null && !userIds.isEmpty()) {
+                wrapper.in(FeedPurchase::getCreatorId, userIds);
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        
         wrapper.eq(FeedPurchase::getStatus, 1);
         wrapper.orderByDesc(FeedPurchase::getCreateTime);
         return purchaseMapper.selectList(wrapper);
@@ -38,6 +59,25 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
     public Page<FeedPurchase> getPage(Integer current, Integer size, String feedName, String feedType, String supplier, Integer status) {
         Page<FeedPurchase> page = new Page<>(current, size);
         LambdaQueryWrapper<FeedPurchase> wrapper = new LambdaQueryWrapper<>();
+        
+        // 普通操作员只能查看自己创建的采购记录
+        if (UserContext.isOperator()) {
+            Long userId = UserContext.getCurrentUserId();
+            if (userId != null) {
+                wrapper.eq(FeedPurchase::getCreatorId, userId);
+            } else {
+                return page;
+            }
+        }
+        // 部门管理员可以查看其部门下所有用户创建的采购记录
+        else if (UserContext.isDepartmentManager()) {
+            List<Long> userIds = UserContext.getDepartmentManagerUserIds();
+            if (userIds != null && !userIds.isEmpty()) {
+                wrapper.in(FeedPurchase::getCreatorId, userIds);
+            } else {
+                return page;
+            }
+        }
         
         if (feedName != null && !feedName.isEmpty()) {
             wrapper.like(FeedPurchase::getFeedName, feedName);

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -24,6 +25,26 @@ public class FeedInventoryServiceImpl implements FeedInventoryService {
     @Override
     public List<FeedInventory> getAllInventories() {
         LambdaQueryWrapper<FeedInventory> wrapper = new LambdaQueryWrapper<>();
+        
+        // 普通操作员只能查看自己创建的库存记录
+        if (UserContext.isOperator()) {
+            Long userId = UserContext.getCurrentUserId();
+            if (userId != null) {
+                wrapper.eq(FeedInventory::getCreatorId, userId);
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        // 部门管理员可以查看其部门下所有用户创建的库存记录
+        else if (UserContext.isDepartmentManager()) {
+            List<Long> userIds = UserContext.getDepartmentManagerUserIds();
+            if (userIds != null && !userIds.isEmpty()) {
+                wrapper.in(FeedInventory::getCreatorId, userIds);
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        
         wrapper.eq(FeedInventory::getStatus, 1);
         wrapper.orderByDesc(FeedInventory::getCreateTime);
         return inventoryMapper.selectList(wrapper);
@@ -38,6 +59,25 @@ public class FeedInventoryServiceImpl implements FeedInventoryService {
     public Page<FeedInventory> getPage(Integer current, Integer size, String feedName, String feedType, Integer status) {
         Page<FeedInventory> page = new Page<>(current, size);
         LambdaQueryWrapper<FeedInventory> wrapper = new LambdaQueryWrapper<>();
+        
+        // 普通操作员只能查看自己创建的库存记录
+        if (UserContext.isOperator()) {
+            Long userId = UserContext.getCurrentUserId();
+            if (userId != null) {
+                wrapper.eq(FeedInventory::getCreatorId, userId);
+            } else {
+                return page;
+            }
+        }
+        // 部门管理员可以查看其部门下所有用户创建的库存记录
+        else if (UserContext.isDepartmentManager()) {
+            List<Long> userIds = UserContext.getDepartmentManagerUserIds();
+            if (userIds != null && !userIds.isEmpty()) {
+                wrapper.in(FeedInventory::getCreatorId, userIds);
+            } else {
+                return page;
+            }
+        }
         
         if (feedName != null && !feedName.isEmpty()) {
             wrapper.like(FeedInventory::getFeedName, feedName);

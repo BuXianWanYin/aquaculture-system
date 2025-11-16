@@ -205,5 +205,24 @@ public class FeedUsageServiceImpl implements FeedUsageService {
         wrapper.eq(FeedUsage::getStatus, 1);
         return usageMapper.selectCount(wrapper);
     }
+    
+    @Override
+    public BigDecimal calculateTotalCostByPlanId(Long planId) {
+        if (planId == null) {
+            return BigDecimal.ZERO;
+        }
+        LambdaQueryWrapper<FeedUsage> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FeedUsage::getPlanId, planId)
+               .eq(FeedUsage::getStatus, 1); // 只统计正常状态的记录
+        
+        List<FeedUsage> usages = usageMapper.selectList(wrapper);
+        BigDecimal totalCost = BigDecimal.ZERO;
+        for (FeedUsage usage : usages) {
+            if (usage.getTotalCost() != null) {
+                totalCost = totalCost.add(usage.getTotalCost());
+            }
+        }
+        return totalCost;
+    }
 }
 

@@ -1,6 +1,17 @@
 import request from '@/utils/request'
 
 /**
+ * 查询所有产量统计（用于下拉选择）
+ * @returns {Promise} 返回所有产量统计列表
+ */
+export const getAllStatistics = () => {
+  return request({
+    url: '/yield/all',
+    method: 'get'
+  })
+}
+
+/**
  * 分页查询产量统计列表
  * @param {Object} params - 查询参数 {current, size, planId, areaId, breedId, status}
  * @returns {Promise} 返回分页产量统计列表

@@ -34,7 +34,7 @@ public class FeedPurchaseController {
      * 分页查询采购记录列表
      */
     @GetMapping("/page")
-    @RequiresPermission({"feed:purchase:view"})
+    @RequiresPermission({"feed:purchase:list"})
     public Result<Page<FeedPurchase>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -50,7 +50,7 @@ public class FeedPurchaseController {
      * 根据ID查询采购记录
      */
     @GetMapping("/{purchaseId}")
-    @RequiresPermission({"feed:purchase:view"})
+    @RequiresPermission({"feed:purchase:detail"})
     public Result<FeedPurchase> getById(@PathVariable Long purchaseId) {
         FeedPurchase purchase = purchaseService.getById(purchaseId);
         return Result.success(purchase);

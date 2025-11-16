@@ -147,5 +147,31 @@ public class UserContext {
             .map(BaseArea::getAreaId)
             .collect(Collectors.toList());
     }
+    
+    /**
+     * 获取部门管理员管理的所有用户ID列表
+     * 通过用户的areaId找到对应的departmentId，然后获取该部门下所有区域的用户
+     */
+    public static List<Long> getDepartmentManagerUserIds() {
+        if (!isDepartmentManager()) {
+            return null;
+        }
+        
+        List<Long> areaIds = getDepartmentManagerAreaIds();
+        if (areaIds == null || areaIds.isEmpty() || userMapper == null) {
+            return null;
+        }
+        
+        // 查询该部门下所有区域的用户
+        List<SysUser> users = userMapper.selectList(
+            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser>()
+                .in(SysUser::getAreaId, areaIds)
+                .eq(SysUser::getStatus, 1)
+        );
+        
+        return users.stream()
+            .map(SysUser::getUserId)
+            .collect(Collectors.toList());
+    }
 }
 

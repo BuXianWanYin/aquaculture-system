@@ -23,6 +23,10 @@
             <el-option label="品种管理" value="breed" />
             <el-option label="设备管理" value="equipment" />
             <el-option label="产量管理" value="yield" />
+            <el-option label="饲料管理" value="饲料管理" />
+            <el-option label="病害防控管理" value="病害防控管理" />
+            <el-option label="日常生产记录" value="日常生产记录" />
+            <el-option label="销售管理" value="销售管理" />
             <el-option label="统计报表" value="statistics" />
             <el-option label="仪表盘" value="dashboard" />
           </el-select>
@@ -113,6 +117,10 @@
             <el-option label="品种管理" value="breed" />
             <el-option label="设备管理" value="equipment" />
             <el-option label="产量管理" value="yield" />
+            <el-option label="饲料管理" value="饲料管理" />
+            <el-option label="病害防控管理" value="病害防控管理" />
+            <el-option label="日常生产记录" value="日常生产记录" />
+            <el-option label="销售管理" value="销售管理" />
             <el-option label="统计报表" value="statistics" />
             <el-option label="仪表盘" value="dashboard" />
           </el-select>

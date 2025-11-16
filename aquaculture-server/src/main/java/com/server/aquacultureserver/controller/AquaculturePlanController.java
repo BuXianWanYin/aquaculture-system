@@ -5,7 +5,10 @@ import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.AquaculturePlan;
 import com.server.aquacultureserver.service.AquaculturePlanService;
+import com.server.aquacultureserver.service.FeedUsageService;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.math.BigDecimal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +24,9 @@ public class AquaculturePlanController {
     
     @Autowired
     private AquaculturePlanService planService;
+    
+    @Autowired
+    private FeedUsageService feedUsageService;
     
     /**
      * 查询所有计划
@@ -43,6 +49,15 @@ public class AquaculturePlanController {
             @RequestParam(required = false) Long breedId,
             @RequestParam(required = false) Integer status) {
         Page<AquaculturePlan> page = planService.getPage(current, size, planName, areaId, breedId, status);
+        
+        // 为每个计划计算饲料已使用金额并添加到响应中
+        for (AquaculturePlan plan : page.getRecords()) {
+            if (plan.getPlanId() != null) {
+                BigDecimal usedAmount = feedUsageService.calculateTotalCostByPlanId(plan.getPlanId());
+                plan.setFeedUsedAmount(usedAmount);
+            }
+        }
+        
         return Result.success(page);
     }
     

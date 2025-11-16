@@ -34,7 +34,7 @@ public class DiseasePreventionController {
      * 分页查询防治记录列表
      */
     @GetMapping("/page")
-    @RequiresPermission({"disease:prevention:view"})
+    @RequiresPermission({"disease:prevention:list"})
     public Result<Page<DiseasePrevention>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -50,7 +50,7 @@ public class DiseasePreventionController {
      * 根据病害记录ID查询防治记录列表
      */
     @GetMapping("/record/{recordId}")
-    @RequiresPermission({"disease:prevention:view"})
+    @RequiresPermission({"disease:prevention:list"})
     public Result<List<DiseasePrevention>> getByRecordId(@PathVariable Long recordId) {
         List<DiseasePrevention> preventions = preventionService.getByRecordId(recordId);
         return Result.success(preventions);
@@ -60,7 +60,7 @@ public class DiseasePreventionController {
      * 根据ID查询防治记录
      */
     @GetMapping("/{preventionId}")
-    @RequiresPermission({"disease:prevention:view"})
+    @RequiresPermission({"disease:prevention:detail"})
     public Result<DiseasePrevention> getById(@PathVariable Long preventionId) {
         DiseasePrevention prevention = preventionService.getById(preventionId);
         return Result.success(prevention);

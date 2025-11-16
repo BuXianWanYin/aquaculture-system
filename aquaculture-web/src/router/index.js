@@ -26,7 +26,7 @@ const routes = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('@/views/Dashboard.vue'),
-        meta: { title: '首页' }
+        meta: { title: '仪表盘' }
       },
       {
         path: 'user',
@@ -81,6 +81,30 @@ const routes = [
         name: 'Yield',
         component: () => import('@/views/yield/YieldList.vue'),
         meta: { title: '产量统计管理', roles: [ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER, ROLE_NAMES.DEPARTMENT_MANAGER] }
+      },
+      {
+        path: 'feed',
+        name: 'Feed',
+        component: () => import('@/views/feed/FeedManagement.vue'),
+        meta: { title: '饲料管理', roles: [ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DEPARTMENT_MANAGER] }
+      },
+      {
+        path: 'disease',
+        name: 'Disease',
+        component: () => import('@/views/disease/DiseaseManagement.vue'),
+        meta: { title: '病害防控管理', roles: [ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DEPARTMENT_MANAGER] }
+      },
+      {
+        path: 'production',
+        name: 'Production',
+        component: () => import('@/views/production/ProductionManagement.vue'),
+        meta: { title: '日常生产记录', roles: [ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DEPARTMENT_MANAGER] }
+      },
+      {
+        path: 'sales',
+        name: 'Sales',
+        component: () => import('@/views/sales/SalesManagement.vue'),
+        meta: { title: '销售管理', roles: [ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER, ROLE_NAMES.DEPARTMENT_MANAGER] }
       },
       {
         path: 'operLog',

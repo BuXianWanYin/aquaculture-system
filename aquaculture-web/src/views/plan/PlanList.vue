@@ -47,6 +47,14 @@
         </el-table-column>
         <el-table-column prop="targetYield" label="目标产量(kg)" min-width="120" />
         <el-table-column prop="releaseAmount" label="投放量(kg)" min-width="120" />
+        <el-table-column prop="feedBudget" label="饲料预算" min-width="150">
+          <template #default="{ row }">
+            <span v-if="row.feedBudget || row.feedUsedAmount !== undefined">
+              {{ formatFeedBudget(row.feedUsedAmount, row.feedBudget) }}
+            </span>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="cycleDays" label="周期(天)" width="100" />
         <el-table-column prop="startDate" label="开始日期" min-width="120">
           <template #default="{ row }">
@@ -614,6 +622,18 @@ const getBreedName = (breedId) => {
   if (!breedId) return '-'
   const breed = breedList.value.find(b => b.breedId === breedId)
   return breed ? breed.breedName : `品种${breedId}`
+}
+
+// 格式化饲料预算显示：已使用金额/预算金额
+const formatFeedBudget = (usedAmount, budget) => {
+  const used = usedAmount || 0
+  const budgetValue = budget || 0
+  
+  // 格式化为两位小数
+  const usedStr = typeof used === 'number' ? used.toFixed(2) : (parseFloat(used) || 0).toFixed(2)
+  const budgetStr = typeof budgetValue === 'number' ? budgetValue.toFixed(2) : (parseFloat(budgetValue) || 0).toFixed(2)
+  
+  return `${usedStr}/${budgetStr}`
 }
 
 onMounted(() => {

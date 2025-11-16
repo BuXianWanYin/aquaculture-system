@@ -34,7 +34,7 @@ public class DailyInspectionController {
      * 分页查询检查记录列表
      */
     @GetMapping("/page")
-    @RequiresPermission({"production:inspection:view"})
+    @RequiresPermission({"production:inspection:list"})
     public Result<Page<DailyInspection>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -51,7 +51,7 @@ public class DailyInspectionController {
      * 根据ID查询检查记录
      */
     @GetMapping("/{inspectionId}")
-    @RequiresPermission({"production:inspection:view"})
+    @RequiresPermission({"production:inspection:detail"})
     public Result<DailyInspection> getById(@PathVariable Long inspectionId) {
         DailyInspection inspection = inspectionService.getById(inspectionId);
         return Result.success(inspection);

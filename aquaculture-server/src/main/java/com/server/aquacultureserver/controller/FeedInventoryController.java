@@ -34,7 +34,7 @@ public class FeedInventoryController {
      * 分页查询库存记录列表
      */
     @GetMapping("/page")
-    @RequiresPermission({"feed:inventory:view"})
+    @RequiresPermission({"feed:inventory:list"})
     public Result<Page<FeedInventory>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -49,7 +49,7 @@ public class FeedInventoryController {
      * 根据ID查询库存记录
      */
     @GetMapping("/{inventoryId}")
-    @RequiresPermission({"feed:inventory:view"})
+    @RequiresPermission({"feed:inventory:detail"})
     public Result<FeedInventory> getById(@PathVariable Long inventoryId) {
         FeedInventory inventory = inventoryService.getById(inventoryId);
         return Result.success(inventory);

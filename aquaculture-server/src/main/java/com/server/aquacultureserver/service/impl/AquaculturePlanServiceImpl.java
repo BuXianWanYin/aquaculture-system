@@ -30,6 +30,9 @@ public class AquaculturePlanServiceImpl implements AquaculturePlanService {
     @Autowired
     private YieldStatisticsMapper yieldStatisticsMapper;
     
+    @Autowired
+    private com.server.aquacultureserver.service.FeedUsageService feedUsageService;
+    
     @Override
     public List<AquaculturePlan> getAllPlans() {
         LambdaQueryWrapper<AquaculturePlan> wrapper = new LambdaQueryWrapper<>();
@@ -102,7 +105,17 @@ public class AquaculturePlanServiceImpl implements AquaculturePlanService {
         }
         
         wrapper.orderByDesc(AquaculturePlan::getCreateTime);
-        return planMapper.selectPage(page, wrapper);
+        Page<AquaculturePlan> result = planMapper.selectPage(page, wrapper);
+        
+        // 为每个计划计算并设置饲料已使用金额
+        for (AquaculturePlan plan : result.getRecords()) {
+            if (plan.getPlanId() != null) {
+                java.math.BigDecimal usedAmount = feedUsageService.calculateTotalCostByPlanId(plan.getPlanId());
+                plan.setFeedUsedAmount(usedAmount);
+            }
+        }
+        
+        return result;
     }
     
     @Override

@@ -35,7 +35,7 @@ public class SalesRecordController {
      * 分页查询销售记录列表
      */
     @GetMapping("/page")
-    @RequiresPermission({"sales:record:view"})
+    @RequiresPermission({"sales:record:list"})
     public Result<Page<SalesRecord>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -53,7 +53,7 @@ public class SalesRecordController {
      * 根据ID查询销售记录
      */
     @GetMapping("/{salesId}")
-    @RequiresPermission({"sales:record:view"})
+    @RequiresPermission({"sales:record:detail"})
     public Result<SalesRecord> getById(@PathVariable Long salesId) {
         SalesRecord record = recordService.getById(salesId);
         return Result.success(record);
@@ -105,7 +105,7 @@ public class SalesRecordController {
      * 统计销售收入
      */
     @GetMapping("/statistics")
-    @RequiresPermission({"sales:record:view"})
+    @RequiresPermission({"sales:record:list"})
     public Result<Map<String, Object>> getSalesStatistics(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,

@@ -34,7 +34,7 @@ public class FeedUsageController {
      * 分页查询使用记录列表
      */
     @GetMapping("/page")
-    @RequiresPermission({"feed:usage:view"})
+    @RequiresPermission({"feed:usage:list"})
     public Result<Page<FeedUsage>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -51,7 +51,7 @@ public class FeedUsageController {
      * 根据ID查询使用记录
      */
     @GetMapping("/{usageId}")
-    @RequiresPermission({"feed:usage:view"})
+    @RequiresPermission({"feed:usage:detail"})
     public Result<FeedUsage> getById(@PathVariable Long usageId) {
         FeedUsage usage = usageService.getById(usageId);
         return Result.success(usage);

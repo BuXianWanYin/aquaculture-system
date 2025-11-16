@@ -44,5 +44,10 @@ public interface FeedUsageService {
      * 统计使用记录总数
      */
     long count();
+    
+    /**
+     * 根据计划ID计算该计划的饲料总使用金额
+     */
+    java.math.BigDecimal calculateTotalCostByPlanId(Long planId);
 }
 
