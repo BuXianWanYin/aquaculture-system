@@ -271,13 +271,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, nextTick } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Document, CircleCheck, Loading, Clock } from '@element-plus/icons-vue'
 import { 
   getStatisticList, saveStatistic, updateStatistic, deleteStatistic,
   getMonthlyYieldTrend, getBreedYieldRatio, getAreaYieldComparison, getPlanCompletionStats
 } from '@/api/statistic'
+import { getAllAreas } from '@/api/area'
+import { getAllBreeds } from '@/api/breed'
 import { formatDateTime, formatDate } from '@/utils/date'
 import { useUserStore } from '@/stores/user'
 import { isAdmin } from '@/constants/role'
@@ -307,6 +309,10 @@ const planStats = ref({
   pendingCount: 0,
   completionRate: 0
 })
+
+// 区域和品种列表（用于ID到名称的映射）
+const areaList = ref([])
+const breedList = ref([])
 
 const searchForm = reactive({
   statisticName: '',
@@ -417,14 +423,41 @@ const loadMonthlyTrend = async () => {
       }
       
       await nextTick()
-      if (!monthlyTrendChart) {
-        monthlyTrendChart = echarts.init(document.querySelector('.statistic-list .el-card:nth-child(2) .el-card__body > div'))
+      // 确保 DOM 已渲染
+      if (!monthlyTrendChartRef.value) {
+        console.warn('月度趋势图表容器未找到，延迟重试')
+        setTimeout(() => loadMonthlyTrend(), 200)
+        return
       }
-      monthlyTrendChart.setOption(option)
+      // 如果图表已存在，先销毁再重新初始化
+      if (monthlyTrendChart) {
+        monthlyTrendChart.dispose()
+        monthlyTrendChart = null
+      }
+      try {
+        monthlyTrendChart = echarts.init(monthlyTrendChartRef.value)
+        monthlyTrendChart.setOption(option)
+      } catch (error) {
+        console.error('初始化月度趋势图表失败', error)
+      }
     }
   } catch (error) {
     console.error('加载月度趋势失败', error)
   }
+}
+
+// 根据ID获取品种名称
+const getBreedName = (breedId) => {
+  if (!breedId) return '-'
+  const breed = breedList.value.find(b => b.breedId === breedId)
+  return breed ? breed.breedName : `品种${breedId}`
+}
+
+// 根据ID获取区域名称
+const getAreaName = (areaId) => {
+  if (!areaId) return '-'
+  const area = areaList.value.find(a => a.areaId === areaId)
+  return area ? area.areaName : `区域${areaId}`
 }
 
 // 加载品种产量占比
@@ -440,7 +473,7 @@ const loadBreedRatio = async () => {
       const data = res.data || []
       const chartData = data.map(item => ({
         value: item.yield,
-        name: `品种${item.breedId}`
+        name: getBreedName(item.breedId)
       }))
       
       const option = {
@@ -462,10 +495,23 @@ const loadBreedRatio = async () => {
       }
       
       await nextTick()
-      if (!breedRatioChart) {
-        breedRatioChart = echarts.init(document.querySelector('.statistic-list .el-card:nth-child(3) .el-card__body > div'))
+      // 确保 DOM 已渲染
+      if (!breedRatioChartRef.value) {
+        console.warn('品种占比图表容器未找到，延迟重试')
+        setTimeout(() => loadBreedRatio(), 200)
+        return
       }
-      breedRatioChart.setOption(option)
+      // 如果图表已存在，先销毁再重新初始化
+      if (breedRatioChart) {
+        breedRatioChart.dispose()
+        breedRatioChart = null
+      }
+      try {
+        breedRatioChart = echarts.init(breedRatioChartRef.value)
+        breedRatioChart.setOption(option)
+      } catch (error) {
+        console.error('初始化品种占比图表失败', error)
+      }
     }
   } catch (error) {
     console.error('加载品种占比失败', error)
@@ -483,7 +529,7 @@ const loadAreaComparison = async () => {
     const res = await getAreaYieldComparison(params)
     if (res.code === 200) {
       const data = res.data || []
-      const areas = data.map(item => `区域${item.areaId}`)
+      const areas = data.map(item => getAreaName(item.areaId))
       const yields = data.map(item => item.yield)
       
       const option = {
@@ -499,10 +545,23 @@ const loadAreaComparison = async () => {
       }
       
       await nextTick()
-      if (!areaComparisonChart) {
-        areaComparisonChart = echarts.init(document.querySelector('.statistic-list .el-card:nth-child(4) .el-card__body > div'))
+      // 确保 DOM 已渲染
+      if (!areaComparisonChartRef.value) {
+        console.warn('区域对比图表容器未找到，延迟重试')
+        setTimeout(() => loadAreaComparison(), 200)
+        return
       }
-      areaComparisonChart.setOption(option)
+      // 如果图表已存在，先销毁再重新初始化
+      if (areaComparisonChart) {
+        areaComparisonChart.dispose()
+        areaComparisonChart = null
+      }
+      try {
+        areaComparisonChart = echarts.init(areaComparisonChartRef.value)
+        areaComparisonChart.setOption(option)
+      } catch (error) {
+        console.error('初始化区域对比图表失败', error)
+      }
     }
   } catch (error) {
     console.error('加载区域对比失败', error)
@@ -638,12 +697,59 @@ const handleCurrentChange = () => {
   loadData()
 }
 
+// 加载区域列表
+const loadAreaList = async () => {
+  try {
+    const res = await getAllAreas()
+    if (res.code === 200) {
+      areaList.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载区域列表失败', error)
+  }
+}
+
+// 加载品种列表
+const loadBreedList = async () => {
+  try {
+    const res = await getAllBreeds()
+    if (res.code === 200) {
+      breedList.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载品种列表失败', error)
+  }
+}
+
 onMounted(() => {
   loadData()
   loadPlanStats()
-  loadMonthlyTrend()
-  loadBreedRatio()
-  loadAreaComparison()
+  loadAreaList()
+  loadBreedList()
+  // 延迟加载图表，确保 DOM 已渲染
+  nextTick(() => {
+    setTimeout(() => {
+      loadMonthlyTrend()
+      loadBreedRatio()
+      loadAreaComparison()
+    }, 100)
+  })
+})
+
+// 组件卸载时清理图表实例
+onBeforeUnmount(() => {
+  if (monthlyTrendChart) {
+    monthlyTrendChart.dispose()
+    monthlyTrendChart = null
+  }
+  if (breedRatioChart) {
+    breedRatioChart.dispose()
+    breedRatioChart = null
+  }
+  if (areaComparisonChart) {
+    areaComparisonChart.dispose()
+    areaComparisonChart = null
+  }
 })
 </script>
 

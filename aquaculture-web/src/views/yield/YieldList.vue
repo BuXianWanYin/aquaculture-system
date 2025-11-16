@@ -839,11 +839,11 @@ const handleFormUploadRemove = async (file) => {
         ElMessage.success('删除成功')
         // 从列表中移除
         if (filePath) {
-          const index = formUploadedFiles.value.findIndex(
+    const index = formUploadedFiles.value.findIndex(
             f => f.filePath === filePath
-          )
-          if (index > -1) {
-            formUploadedFiles.value.splice(index, 1)
+    )
+    if (index > -1) {
+      formUploadedFiles.value.splice(index, 1)
           }
           // 从文件列表中移除
           const fileIndex = formFileList.value.findIndex(
