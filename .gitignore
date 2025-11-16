@@ -1,0 +1,171 @@
+# ============================================
+# 水产养殖管理系统 - Git 忽略文件
+# ============================================
+
+# ========== 操作系统相关 ==========
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ========== IDE 和编辑器 ==========
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+build/
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+*.code-workspace
+
+# NetBeans
+nbproject/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# ========== 后端 (Java/Spring Boot) ==========
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle (如果使用)
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Java
+*.class
+*.log
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Spring Boot
+application-local.properties
+application-dev.properties
+application-prod.properties
+*.log
+
+# ========== 前端 (Vue/Node.js) ==========
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+
+# 构建输出
+dist/
+dist-ssr/
+build/
+*.local
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# 缓存
+.cache/
+.parcel-cache/
+.npm/
+.eslintcache
+.stylelintcache
+
+# 测试覆盖率
+coverage/
+*.lcov
+.nyc_output/
+
+# ========== 数据库相关 ==========
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# ========== 日志文件 ==========
+logs/
+*.log
+log/
+
+# ========== 临时文件 ==========
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.backup
+*.old
+
+# ========== 压缩文件 ==========
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# ========== 文档生成 ==========
+docs/_build/
+site/
+
+# ========== 其他 ==========
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 个人配置文件
+*.local
+local.properties
+local_settings.py
+
+# 敏感信息（如果有）
+secrets/
+*.pem
+*.key
+*.crt
+config/local.json
+
