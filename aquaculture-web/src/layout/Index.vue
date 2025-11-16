@@ -16,53 +16,53 @@
           <el-icon><House /></el-icon>
           <span>首页</span>
         </el-menu-item>
-        <el-sub-menu index="user" v-if="canAccess([1, 2])">
+        <el-sub-menu index="user" v-if="canAccess([ROLE_NAMES.ADMIN])">
           <template #title>
             <el-icon><User /></el-icon>
             <span>用户与权限管理</span>
           </template>
-          <el-menu-item index="/user" v-if="canAccess([1, 2])">
+          <el-menu-item index="/user" v-if="canAccess([ROLE_NAMES.ADMIN])">
             <el-icon><User /></el-icon>
             <span>用户管理</span>
           </el-menu-item>
-          <el-menu-item index="/role" v-if="canAccess([1])">
+          <el-menu-item index="/role" v-if="canAccess([ROLE_NAMES.ADMIN])">
             <el-icon><UserFilled /></el-icon>
             <span>角色管理</span>
           </el-menu-item>
-          <el-menu-item index="/permission" v-if="canAccess([1])">
+          <el-menu-item index="/permission" v-if="canAccess([ROLE_NAMES.ADMIN])">
             <el-icon><Key /></el-icon>
             <span>权限管理</span>
           </el-menu-item>
         </el-sub-menu>
-        <el-menu-item index="/breed" v-if="canAccess([1, 2, 3])">
+        <el-menu-item index="/breed" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR])">
           <el-icon><Collection /></el-icon>
           <span>养殖品种</span>
         </el-menu-item>
-        <el-menu-item index="/area" v-if="canAccess([1, 2, 3])">
+        <el-menu-item index="/area" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR])">
           <el-icon><MapLocation /></el-icon>
           <span>养殖区域</span>
         </el-menu-item>
-        <el-menu-item index="/equipment" v-if="canAccess([1, 2, 3])">
+        <el-menu-item index="/equipment" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR])">
           <el-icon><Tools /></el-icon>
           <span>设备管理</span>
         </el-menu-item>
-        <el-menu-item index="/plan" v-if="canAccess([1, 2, 3, 4])">
+        <el-menu-item index="/plan" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER])">
           <el-icon><Document /></el-icon>
           <span>养殖计划管理</span>
         </el-menu-item>
-        <el-menu-item index="/yield" v-if="canAccess([1, 2, 3, 4])">
+        <el-menu-item index="/yield" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER])">
           <el-icon><DataAnalysis /></el-icon>
           <span>产量统计管理</span>
         </el-menu-item>
-        <el-menu-item index="/operLog" v-if="canAccess([1, 2])">
+        <el-menu-item index="/operLog" v-if="canAccess([ROLE_NAMES.ADMIN])">
           <el-icon><Document /></el-icon>
           <span>操作日志管理</span>
         </el-menu-item>
-        <el-menu-item index="/statistic" v-if="canAccess([1, 2, 4])">
+        <el-menu-item index="/statistic" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.DECISION_MAKER])">
           <el-icon><DataAnalysis /></el-icon>
           <span>数据报表与分析</span>
         </el-menu-item>
-        <el-menu-item index="/message" v-if="canAccess([1, 2, 3, 4])">
+        <el-menu-item index="/message" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER])">
           <el-icon><Bell /></el-icon>
           <span>消息通知</span>
         </el-menu-item>
@@ -104,6 +104,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import { ROLE_NAMES, hasRole } from '@/constants/role'
 import {
   House,
   User,
@@ -126,10 +127,11 @@ const userStore = useUserStore()
 const activeMenu = computed(() => route.path)
 const currentTitle = computed(() => route.meta?.title || '首页')
 
-// 权限检查函数
-const canAccess = (roles) => {
-  if (!roles || !userStore.userInfo) return true
-  return roles.includes(userStore.userInfo.roleId)
+// 权限检查函数（基于角色名称，避免硬编码角色ID）
+const canAccess = (roleNames) => {
+  if (!roleNames || !userStore.userInfo) return true
+  const userRoleName = userStore.userInfo.roleName
+  return hasRole(roleNames, userRoleName)
 }
 
 const handleCommand = (command) => {

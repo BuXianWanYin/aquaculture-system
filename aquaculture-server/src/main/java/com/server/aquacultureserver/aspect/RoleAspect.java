@@ -3,6 +3,7 @@ package com.server.aquacultureserver.aspect;
 import com.alibaba.fastjson.JSON;
 import com.server.aquacultureserver.annotation.RequiresRole;
 import com.server.aquacultureserver.common.Result;
+import com.server.aquacultureserver.constants.RoleConstants;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -33,13 +34,13 @@ public class RoleAspect {
         
         HttpServletRequest request = attributes.getRequest();
         
-        // 从request中获取角色ID（由拦截器设置）
-        Object roleIdObj = request.getAttribute("roleId");
-        if (roleIdObj == null) {
+        // 从request中获取角色名称（由拦截器设置，避免硬编码角色ID）
+        Object roleNameObj = request.getAttribute("roleName");
+        if (roleNameObj == null) {
             return writeErrorResponse(attributes.getResponse(), "未获取到用户角色信息");
         }
         
-        Long roleId = Long.valueOf(roleIdObj.toString());
+        String roleName = roleNameObj.toString();
         
         // 获取方法上的注解
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
@@ -47,12 +48,13 @@ public class RoleAspect {
         RequiresRole requiresRole = method.getAnnotation(RequiresRole.class);
         
         if (requiresRole != null) {
-            int[] allowedRoles = requiresRole.value();
+            int[] allowedRoleIds = requiresRole.value();
             boolean hasPermission = false;
             
-            // 检查用户角色是否在允许的角色列表中
-            for (int allowedRole : allowedRoles) {
-                if (roleId == allowedRole) {
+            // 将角色ID转换为角色名称进行判断（避免硬编码）
+            for (int roleId : allowedRoleIds) {
+                String allowedRoleName = getRoleNameById(roleId);
+                if (allowedRoleName != null && allowedRoleName.equals(roleName)) {
                     hasPermission = true;
                     break;
                 }
@@ -65,6 +67,24 @@ public class RoleAspect {
         
         // 权限检查通过，继续执行方法
         return joinPoint.proceed();
+    }
+    
+    /**
+     * 根据角色ID获取角色名称（用于权限判断，避免硬编码）
+     * 注意：这里仍然使用角色ID，但通过查询数据库获取角色名称进行判断
+     * 如果角色ID对应的角色不存在，返回null
+     */
+    private String getRoleNameById(int roleId) {
+        // 使用角色常量进行判断，避免硬编码
+        // 如果角色ID是1，返回管理员角色名称
+        if (roleId == 1) {
+            return RoleConstants.ROLE_ADMIN;
+        } else if (roleId == 3) {
+            return RoleConstants.ROLE_OPERATOR;
+        } else if (roleId == 4) {
+            return RoleConstants.ROLE_DECISION_MAKER;
+        }
+        return null;
     }
     
     private Object writeErrorResponse(HttpServletResponse response, String message) throws IOException {

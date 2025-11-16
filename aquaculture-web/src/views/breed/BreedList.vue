@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>养殖品种管理</span>
-          <el-button type="primary" @click="handleAdd">
+          <el-button v-if="hasPermission('breed:add')" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>
             新增品种
           </el-button>
@@ -56,8 +56,9 @@
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="hasPermission('breed:edit')" type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="hasPermission('breed:delete')" type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+            <span v-if="!hasPermission('breed:edit') && !hasPermission('breed:delete')" style="color: #909399;">无操作权限</span>
           </template>
         </el-table-column>
       </el-table>
@@ -132,6 +133,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getBreedList, saveBreed, updateBreed, deleteBreed } from '@/api/breed'
 import { formatDateTime } from '@/utils/date'
+import { usePermission } from '@/composables/usePermission'
+
+const { hasPermission } = usePermission()
 
 const loading = ref(false)
 const tableData = ref([])

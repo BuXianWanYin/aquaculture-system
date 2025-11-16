@@ -26,7 +26,7 @@ public class SysOperLogController {
      * 分页查询操作日志列表
      */
     @GetMapping("/page")
-    @RequiresRole({1, 2}) // 系统管理员、部门管理员
+    @RequiresRole({1}) // 系统管理员
     public Result<Page<SysOperLog>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -44,7 +44,7 @@ public class SysOperLogController {
      * 根据ID查询操作日志详情
      */
     @GetMapping("/{logId}")
-    @RequiresRole({1, 2}) // 系统管理员、部门管理员
+    @RequiresRole({1}) // 系统管理员
     public Result<SysOperLog> getById(@PathVariable Long logId) {
         SysOperLog log = operLogService.getById(logId);
         return Result.success(log);

@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>产量统计管理</span>
-          <el-button type="primary" @click="handleAdd">
+          <el-button v-if="hasPermission('yield:add')" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>
             新增产量统计
           </el-button>
@@ -104,11 +104,11 @@
         </el-table-column>
         <el-table-column label="操作" width="330" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button type="success" link size="small" @click="handleAudit(row)" v-if="row.status === 0">审核</el-button>
-            <el-button type="warning" link size="small" @click="handleUploadEvidence(row)">上传凭证</el-button>
-            <el-button type="info" link size="small" @click="handleViewEvidence(row)">查看凭证</el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="hasPermission('yield:edit')" type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="hasPermission('yield:audit') && row.status === 0" type="success" link size="small" @click="handleAudit(row)">审核</el-button>
+            <el-button v-if="hasPermission('yield:evidence:add')" type="warning" link size="small" @click="handleUploadEvidence(row)">上传凭证</el-button>
+            <el-button v-if="hasPermission('yield:evidence:view')" type="info" link size="small" @click="handleViewEvidence(row)">查看凭证</el-button>
+            <el-button v-if="hasPermission('yield:delete')" type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -223,7 +223,7 @@
         </el-form-item>
         
         <!-- 凭证上传区域 -->
-        <el-form-item label="产量凭证">
+        <el-form-item label="产量凭证" v-if="hasPermission('yield:evidence:add')">
           <el-upload
             ref="formUploadRef"
             :action="formUploadAction"
@@ -250,6 +250,11 @@
               </div>
             </template>
           </el-upload>
+        </el-form-item>
+        <el-form-item label="产量凭证" v-else>
+          <el-alert type="info" :closable="false">
+            您没有上传凭证的权限
+          </el-alert>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -342,6 +347,7 @@
       @close="handleUploadDialogClose"
     >
       <el-upload
+        v-if="hasPermission('yield:evidence:add')"
         ref="uploadRef"
         :action="uploadAction"
         :headers="uploadHeaders"
@@ -363,6 +369,9 @@
           </div>
         </template>
       </el-upload>
+      <el-alert v-else type="warning" :closable="false">
+        您没有上传凭证的权限
+      </el-alert>
       <div v-if="uploadProgress > 0" style="margin-top: 10px;">
         <el-progress :percentage="uploadProgress" />
       </div>
@@ -421,6 +430,10 @@ import { getAllBreeds } from '@/api/breed'
 import { getUserListForSelect } from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import { formatDateTime, formatDate } from '@/utils/date'
+import { usePermission } from '@/composables/usePermission'
+
+const userStore = useUserStore()
+const { hasPermission } = usePermission()
 
 const loading = ref(false)
 const tableData = ref([])
@@ -430,7 +443,6 @@ const evidenceDialogVisible = ref(false)
 const dialogTitle = ref('新增产量统计')
 const isEdit = ref(false)
 const yieldFormRef = ref(null)
-const userStore = useUserStore()
 const currentYield = ref({})
 const evidenceList = ref([])
 const uploadDialogVisible = ref(false)

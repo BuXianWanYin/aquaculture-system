@@ -2,6 +2,8 @@ package com.server.aquacultureserver.config;
 
 import com.alibaba.fastjson.JSON;
 import com.server.aquacultureserver.common.Result;
+import com.server.aquacultureserver.domain.SysRole;
+import com.server.aquacultureserver.mapper.SysRoleMapper;
 import com.server.aquacultureserver.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,9 @@ public class AuthInterceptor implements HandlerInterceptor {
     
     @Autowired
     private JwtUtil jwtUtil;
+    
+    @Autowired
+    private SysRoleMapper roleMapper;
     
     // 不需要认证的路径
     private static final String[] WHITE_LIST = {
@@ -64,6 +69,14 @@ public class AuthInterceptor implements HandlerInterceptor {
         request.setAttribute("userId", userId);
         request.setAttribute("roleId", roleId);
         request.setAttribute("username", jwtUtil.getUsernameFromToken(token));
+        
+        // 查询角色名称并设置到request中（用于角色权限判断，避免硬编码角色ID）
+        if (roleId != null) {
+            SysRole role = roleMapper.selectById(roleId);
+            if (role != null) {
+                request.setAttribute("roleName", role.getRoleName());
+            }
+        }
         
         return true;
     }

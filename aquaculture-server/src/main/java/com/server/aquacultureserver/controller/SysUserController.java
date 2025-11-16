@@ -165,7 +165,7 @@ public class SysUserController {
      * 分页查询用户列表
      */
     @GetMapping("/page")
-    @RequiresRole({1, 2}) // 系统管理员、部门管理员
+    @RequiresRole({1}) // 系统管理员
     public Result<Page<SysUser>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -190,7 +190,7 @@ public class SysUserController {
      * 新增用户
      */
     @PostMapping
-    @RequiresRole({1, 2}) // 系统管理员、部门管理员
+    @RequiresRole({1}) // 系统管理员
     public Result<Boolean> saveUser(@RequestBody SysUser user) {
         try {
             boolean success = userService.saveUser(user);
@@ -204,7 +204,7 @@ public class SysUserController {
      * 更新用户
      */
     @PutMapping
-    @RequiresRole({1, 2}) // 系统管理员、部门管理员
+    @RequiresRole({1}) // 系统管理员
     public Result<Boolean> updateUser(@RequestBody SysUser user) {
         try {
             boolean success = userService.updateUser(user);
@@ -248,7 +248,7 @@ public class SysUserController {
      * 重置密码
      */
     @PostMapping("/resetPassword")
-    @RequiresRole({1, 2}) // 系统管理员、部门管理员
+    @RequiresRole({1}) // 系统管理员
     public Result<Boolean> resetPassword(
             @RequestParam Long userId,
             @RequestParam String newPassword) {

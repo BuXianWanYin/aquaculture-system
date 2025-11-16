@@ -319,7 +319,19 @@ const handleAssignPermission = async (row) => {
     // 加载角色已分配的权限
     const roleRes = await getPermissionsByRoleId(row.roleId)
     if (roleRes.code === 200) {
-      checkedPermissionIds.value = (roleRes.data || []).map(p => p.permissionId)
+      // 只获取叶子节点（实际权限），过滤掉父节点
+      const allPermissions = allRes.data || []
+      const rolePermissionIds = (roleRes.data || []).map(p => p.permissionId)
+      
+      // 过滤出叶子节点（没有子节点的权限）
+      const leafPermissionIds = rolePermissionIds.filter(permissionId => {
+        const permission = allPermissions.find(p => p.permissionId === permissionId)
+        // 检查是否有其他权限的parentId指向这个权限
+        const hasChildren = allPermissions.some(p => p.parentId === permissionId)
+        return !hasChildren
+      })
+      
+      checkedPermissionIds.value = leafPermissionIds
       
       // 等待DOM更新后设置选中状态，这样会自动触发父子级联
       await nextTick()
@@ -347,14 +359,41 @@ const handlePermissionSubmit = async () => {
   const checkedKeys = permissionTreeRef.value.getCheckedKeys()
   // 获取半选中的节点（父节点被部分选中时）
   const halfCheckedKeys = permissionTreeRef.value.getHalfCheckedKeys()
-  // 合并所有选中的权限ID
-  const allCheckedKeys = [...checkedKeys, ...halfCheckedKeys]
+  
+  // 过滤掉父节点，只保留叶子节点（实际权限）
+  // 因为父节点只是用于展示层级结构，不应该作为权限保存
+  const allPermissionIds = [...checkedKeys, ...halfCheckedKeys]
+  
+  // 递归查找所有叶子节点（没有子节点的节点）
+  const findLeafNodes = (nodes) => {
+    const leafIds = []
+    const traverse = (nodeList) => {
+      nodeList.forEach(node => {
+        // 如果节点在选中的ID列表中，且没有子节点，则是叶子节点
+        if (allPermissionIds.includes(node.permissionId)) {
+          if (!node.children || node.children.length === 0) {
+            leafIds.push(node.permissionId)
+          } else {
+            // 如果有子节点，继续遍历子节点
+            traverse(node.children)
+          }
+        }
+      })
+    }
+    traverse(nodes)
+    return leafIds
+  }
+  
+  // 只保存叶子节点（实际权限）
+  const leafPermissionIds = findLeafNodes(permissionTreeData.value)
   
   try {
-    const res = await assignPermissionsToRole(currentRole.value.roleId, allCheckedKeys)
+    const res = await assignPermissionsToRole(currentRole.value.roleId, leafPermissionIds)
     if (res.code === 200) {
       ElMessage.success('权限分配成功')
       permissionDialogVisible.value = false
+      // 重新加载角色列表，确保数据同步
+      loadData()
     }
   } catch (error) {
     ElMessage.error(error.message || '权限分配失败')

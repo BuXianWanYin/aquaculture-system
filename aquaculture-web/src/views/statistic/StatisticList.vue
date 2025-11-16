@@ -280,11 +280,12 @@ import {
 } from '@/api/statistic'
 import { formatDateTime, formatDate } from '@/utils/date'
 import { useUserStore } from '@/stores/user'
+import { isAdmin } from '@/constants/role'
 import * as echarts from 'echarts'
 
 const userStore = useUserStore()
 const hasPermission = computed(() => {
-  return userStore.userInfo && (userStore.userInfo.roleId === 1 || userStore.userInfo.roleId === 2)
+  return userStore.userInfo && isAdmin(userStore.userInfo.roleName)
 })
 
 const loading = ref(false)

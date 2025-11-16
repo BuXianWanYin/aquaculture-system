@@ -1,7 +1,7 @@
 package com.server.aquacultureserver.aspect;
 
-import com.server.aquacultureserver.domain.SysOperLog;
-import com.server.aquacultureserver.service.SysOperLogService;
+import com.server.aquacultureserver.domain.*;
+import com.server.aquacultureserver.service.*;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -12,6 +12,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 操作日志切面
@@ -23,6 +26,27 @@ public class OperLogAspect {
     
     @Autowired
     private SysOperLogService operLogService;
+    
+    @Autowired
+    private SysUserService userService;
+    
+    @Autowired
+    private SysRoleService roleService;
+    
+    @Autowired
+    private BaseAreaService areaService;
+    
+    @Autowired
+    private BaseBreedService breedService;
+    
+    @Autowired
+    private BaseEquipmentService equipmentService;
+    
+    @Autowired
+    private AquaculturePlanService planService;
+    
+    @Autowired
+    private YieldStatisticsService yieldStatisticsService;
     
     @Around("execution(* com.server.aquacultureserver.controller..*.*(..))")
     public Object recordOperLog(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -226,7 +250,7 @@ public class OperLogAspect {
     }
     
     /**
-     * 获取操作内容
+     * 获取操作内容（将ID转换为名称）
      */
     private String getOperContent(ProceedingJoinPoint joinPoint, String method, String requestURI) {
         StringBuilder content = new StringBuilder();
@@ -235,74 +259,97 @@ public class OperLogAspect {
         if (requestURI.contains("/user")) {
             if ("POST".equals(method)) {
                 content.append("新增用户");
+                appendUserName(content, joinPoint);
             } else if ("PUT".equals(method)) {
                 content.append("修改用户信息");
+                appendUserName(content, joinPoint);
             } else if ("DELETE".equals(method)) {
                 content.append("删除用户");
+                appendUserIdFromPath(content, requestURI, "user");
             } else if ("GET".equals(method)) {
                 content.append("查询用户列表");
             }
         } else if (requestURI.contains("/role")) {
             if ("POST".equals(method)) {
                 content.append("新增角色");
+                appendRoleName(content, joinPoint);
             } else if ("PUT".equals(method)) {
                 content.append("修改角色");
+                appendRoleName(content, joinPoint);
             } else if ("DELETE".equals(method)) {
                 content.append("删除角色");
+                appendRoleIdFromPath(content, requestURI);
             } else if ("GET".equals(method)) {
                 content.append("查询角色列表");
             }
         } else if (requestURI.contains("/breed")) {
             if ("POST".equals(method)) {
                 content.append("新增养殖品种");
+                appendBreedName(content, joinPoint);
             } else if ("PUT".equals(method)) {
                 content.append("修改养殖品种");
+                appendBreedName(content, joinPoint);
             } else if ("DELETE".equals(method)) {
                 content.append("删除养殖品种");
+                appendBreedIdFromPath(content, requestURI);
             } else if ("GET".equals(method)) {
                 content.append("查询养殖品种列表");
             }
         } else if (requestURI.contains("/area")) {
             if ("POST".equals(method)) {
                 content.append("新增养殖区域");
+                appendAreaName(content, joinPoint);
             } else if ("PUT".equals(method)) {
                 content.append("修改养殖区域");
+                appendAreaName(content, joinPoint);
             } else if ("DELETE".equals(method)) {
                 content.append("删除养殖区域");
+                appendAreaIdFromPath(content, requestURI);
             } else if ("GET".equals(method)) {
                 content.append("查询养殖区域列表");
             }
         } else if (requestURI.contains("/equipment")) {
             if ("POST".equals(method)) {
                 content.append("新增设备");
+                appendEquipmentName(content, joinPoint);
             } else if ("PUT".equals(method)) {
                 content.append("修改设备信息");
+                appendEquipmentName(content, joinPoint);
             } else if ("DELETE".equals(method)) {
                 content.append("删除设备");
+                appendEquipmentIdFromPath(content, requestURI);
             } else if ("GET".equals(method)) {
                 content.append("查询设备列表");
             }
         } else if (requestURI.contains("/plan")) {
             if ("POST".equals(method)) {
                 content.append("新增养殖计划");
+                appendPlanName(content, joinPoint);
             } else if ("PUT".equals(method)) {
                 content.append("修改养殖计划");
+                appendPlanName(content, joinPoint);
             } else if ("DELETE".equals(method)) {
                 content.append("删除养殖计划");
+                appendPlanIdFromPath(content, requestURI);
             } else if (requestURI.contains("/approve")) {
                 content.append("审批养殖计划");
+                appendPlanNameFromParams(content, joinPoint);
             } else if ("GET".equals(method)) {
                 content.append("查询养殖计划列表");
             }
         } else if (requestURI.contains("/yield")) {
             if ("POST".equals(method)) {
                 content.append("新增产量统计");
+                appendYieldInfo(content, joinPoint);
             } else if ("PUT".equals(method)) {
                 content.append("修改产量统计");
+                appendYieldInfo(content, joinPoint);
             } else if ("DELETE".equals(method)) {
                 content.append("删除产量统计");
+                appendYieldIdFromPath(content, requestURI);
             } else if (requestURI.contains("/audit")) {
                 content.append("审核产量统计");
+                appendYieldInfoFromParams(content, joinPoint);
             } else if ("GET".equals(method)) {
                 content.append("查询产量统计列表");
             }
@@ -322,31 +369,384 @@ public class OperLogAspect {
             content.append("执行操作: ").append(requestURI);
         }
         
-        // 尝试获取参数信息
+        return content.toString();
+    }
+    
+    /**
+     * 从路径中提取用户ID并转换为用户名
+     */
+    private void appendUserIdFromPath(StringBuilder content, String requestURI, String prefix) {
+        try {
+            Pattern pattern = Pattern.compile("/" + prefix + "/(\\d+)");
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.find()) {
+                Long userId = Long.parseLong(matcher.group(1));
+                SysUser user = userService.getById(userId);
+                if (user != null) {
+                    content.append(": ").append(user.getRealName() != null ? user.getRealName() : user.getUsername());
+                } else {
+                    content.append(": ").append(userId);
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从实体对象中提取用户名
+     */
+    private void appendUserName(StringBuilder content, ProceedingJoinPoint joinPoint) {
         try {
             Object[] args = joinPoint.getArgs();
-            if (args != null && args.length > 0) {
-                // 获取第一个参数（通常是实体对象）
-                Object firstArg = args[0];
-                if (firstArg != null) {
-                    String argStr = firstArg.toString();
-                    // 如果是实体对象，尝试获取关键字段
-                    if (firstArg instanceof com.server.aquacultureserver.domain.SysUser) {
-                        com.server.aquacultureserver.domain.SysUser user = (com.server.aquacultureserver.domain.SysUser) firstArg;
-                        if (user.getUsername() != null) {
-                            content.append("：").append(user.getUsername());
-                        }
-                    } else if (argStr.length() < 100) {
-                        // 参数内容不太长时，添加到操作内容中
-                        content.append("：").append(argStr);
+            if (args != null && args.length > 0 && args[0] instanceof SysUser) {
+                SysUser user = (SysUser) args[0];
+                if (user.getUserId() != null) {
+                    // 如果是更新操作，从数据库获取完整信息
+                    SysUser dbUser = userService.getById(user.getUserId());
+                    if (dbUser != null) {
+                        content.append(": ").append(dbUser.getRealName() != null ? dbUser.getRealName() : dbUser.getUsername());
+                    } else if (user.getUsername() != null) {
+                        content.append(": ").append(user.getUsername());
+                    }
+                } else if (user.getUsername() != null) {
+                    content.append(": ").append(user.getUsername());
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从路径中提取角色ID并转换为角色名
+     */
+    private void appendRoleIdFromPath(StringBuilder content, String requestURI) {
+        try {
+            Pattern pattern = Pattern.compile("/role/(\\d+)");
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.find()) {
+                Long roleId = Long.parseLong(matcher.group(1));
+                SysRole role = roleService.getById(roleId);
+                if (role != null) {
+                    content.append(": ").append(role.getRoleName());
+                } else {
+                    content.append(": ").append(roleId);
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从实体对象中提取角色名
+     */
+    private void appendRoleName(StringBuilder content, ProceedingJoinPoint joinPoint) {
+        try {
+            Object[] args = joinPoint.getArgs();
+            if (args != null && args.length > 0 && args[0] instanceof SysRole) {
+                SysRole role = (SysRole) args[0];
+                if (role.getRoleName() != null) {
+                    content.append(": ").append(role.getRoleName());
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从路径中提取区域ID并转换为区域名
+     */
+    private void appendAreaIdFromPath(StringBuilder content, String requestURI) {
+        try {
+            Pattern pattern = Pattern.compile("/area/(\\d+)");
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.find()) {
+                Long areaId = Long.parseLong(matcher.group(1));
+                BaseArea area = areaService.getById(areaId);
+                if (area != null) {
+                    content.append(": ").append(area.getAreaName());
+                } else {
+                    content.append(": ").append(areaId);
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从实体对象中提取区域名
+     */
+    private void appendAreaName(StringBuilder content, ProceedingJoinPoint joinPoint) {
+        try {
+            Object[] args = joinPoint.getArgs();
+            if (args != null && args.length > 0 && args[0] instanceof BaseArea) {
+                BaseArea area = (BaseArea) args[0];
+                if (area.getAreaId() != null && area.getAreaName() == null) {
+                    BaseArea dbArea = areaService.getById(area.getAreaId());
+                    if (dbArea != null) {
+                        content.append(": ").append(dbArea.getAreaName());
+                    }
+                } else if (area.getAreaName() != null) {
+                    content.append(": ").append(area.getAreaName());
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从路径中提取品种ID并转换为品种名
+     */
+    private void appendBreedIdFromPath(StringBuilder content, String requestURI) {
+        try {
+            Pattern pattern = Pattern.compile("/breed/(\\d+)");
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.find()) {
+                Long breedId = Long.parseLong(matcher.group(1));
+                BaseBreed breed = breedService.getById(breedId);
+                if (breed != null) {
+                    content.append(": ").append(breed.getBreedName());
+                } else {
+                    content.append(": ").append(breedId);
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从实体对象中提取品种名
+     */
+    private void appendBreedName(StringBuilder content, ProceedingJoinPoint joinPoint) {
+        try {
+            Object[] args = joinPoint.getArgs();
+            if (args != null && args.length > 0 && args[0] instanceof BaseBreed) {
+                BaseBreed breed = (BaseBreed) args[0];
+                if (breed.getBreedId() != null && breed.getBreedName() == null) {
+                    BaseBreed dbBreed = breedService.getById(breed.getBreedId());
+                    if (dbBreed != null) {
+                        content.append(": ").append(dbBreed.getBreedName());
+                    }
+                } else if (breed.getBreedName() != null) {
+                    content.append(": ").append(breed.getBreedName());
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从路径中提取设备ID并转换为设备名
+     */
+    private void appendEquipmentIdFromPath(StringBuilder content, String requestURI) {
+        try {
+            Pattern pattern = Pattern.compile("/equipment/(\\d+)");
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.find()) {
+                Long equipmentId = Long.parseLong(matcher.group(1));
+                BaseEquipment equipment = equipmentService.getById(equipmentId);
+                if (equipment != null) {
+                    content.append(": ").append(equipment.getEquipmentName());
+                } else {
+                    content.append(": ").append(equipmentId);
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从实体对象中提取设备名
+     */
+    private void appendEquipmentName(StringBuilder content, ProceedingJoinPoint joinPoint) {
+        try {
+            Object[] args = joinPoint.getArgs();
+            if (args != null && args.length > 0 && args[0] instanceof BaseEquipment) {
+                BaseEquipment equipment = (BaseEquipment) args[0];
+                if (equipment.getEquipmentId() != null && equipment.getEquipmentName() == null) {
+                    BaseEquipment dbEquipment = equipmentService.getById(equipment.getEquipmentId());
+                    if (dbEquipment != null) {
+                        content.append(": ").append(dbEquipment.getEquipmentName());
+                    }
+                } else if (equipment.getEquipmentName() != null) {
+                    content.append(": ").append(equipment.getEquipmentName());
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从路径中提取计划ID并转换为计划名
+     */
+    private void appendPlanIdFromPath(StringBuilder content, String requestURI) {
+        try {
+            Pattern pattern = Pattern.compile("/plan/(\\d+)");
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.find()) {
+                Long planId = Long.parseLong(matcher.group(1));
+                AquaculturePlan plan = planService.getById(planId);
+                if (plan != null) {
+                    content.append(": ").append(plan.getPlanName());
+                } else {
+                    content.append(": ").append(planId);
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从实体对象中提取计划名
+     */
+    private void appendPlanName(StringBuilder content, ProceedingJoinPoint joinPoint) {
+        try {
+            Object[] args = joinPoint.getArgs();
+            if (args != null && args.length > 0 && args[0] instanceof AquaculturePlan) {
+                AquaculturePlan plan = (AquaculturePlan) args[0];
+                if (plan.getPlanId() != null && plan.getPlanName() == null) {
+                    AquaculturePlan dbPlan = planService.getById(plan.getPlanId());
+                    if (dbPlan != null) {
+                        content.append(": ").append(dbPlan.getPlanName());
+                    }
+                } else if (plan.getPlanName() != null) {
+                    content.append(": ").append(plan.getPlanName());
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从参数中提取计划名（用于审批操作）
+     */
+    private void appendPlanNameFromParams(StringBuilder content, ProceedingJoinPoint joinPoint) {
+        try {
+            Object[] args = joinPoint.getArgs();
+            if (args != null && args.length > 0 && args[0] instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> params = (Map<String, Object>) args[0];
+                Object planIdObj = params.get("planId");
+                if (planIdObj != null) {
+                    Long planId = Long.parseLong(planIdObj.toString());
+                    AquaculturePlan plan = planService.getById(planId);
+                    if (plan != null) {
+                        content.append(": ").append(plan.getPlanName());
                     }
                 }
             }
         } catch (Exception e) {
-            // 忽略参数解析错误
+            // 忽略错误
         }
-        
-        return content.toString();
+    }
+    
+    /**
+     * 从路径中提取产量统计ID并转换为信息
+     */
+    private void appendYieldIdFromPath(StringBuilder content, String requestURI) {
+        try {
+            Pattern pattern = Pattern.compile("/yield/(\\d+)");
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.find()) {
+                Long yieldId = Long.parseLong(matcher.group(1));
+                YieldStatistics yield = yieldStatisticsService.getById(yieldId);
+                if (yield != null) {
+                    // 尝试获取区域和品种名称
+                    String areaName = yield.getAreaId() != null ? getAreaNameById(yield.getAreaId()) : null;
+                    String breedName = yield.getBreedId() != null ? getBreedNameById(yield.getBreedId()) : null;
+                    if (areaName != null || breedName != null) {
+                        content.append(": ").append(areaName != null ? areaName : "").append(breedName != null ? " " + breedName : "");
+                    } else {
+                        content.append(": ").append(yieldId);
+                    }
+                } else {
+                    content.append(": ").append(yieldId);
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从实体对象中提取产量统计信息
+     */
+    private void appendYieldInfo(StringBuilder content, ProceedingJoinPoint joinPoint) {
+        try {
+            Object[] args = joinPoint.getArgs();
+            if (args != null && args.length > 0 && args[0] instanceof YieldStatistics) {
+                YieldStatistics yield = (YieldStatistics) args[0];
+                String areaName = yield.getAreaId() != null ? getAreaNameById(yield.getAreaId()) : null;
+                String breedName = yield.getBreedId() != null ? getBreedNameById(yield.getBreedId()) : null;
+                if (areaName != null || breedName != null) {
+                    content.append(": ").append(areaName != null ? areaName : "").append(breedName != null ? " " + breedName : "");
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从参数中提取产量统计信息（用于审核操作）
+     */
+    private void appendYieldInfoFromParams(StringBuilder content, ProceedingJoinPoint joinPoint) {
+        try {
+            Object[] args = joinPoint.getArgs();
+            if (args != null && args.length > 0 && args[0] instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> params = (Map<String, Object>) args[0];
+                Object yieldIdObj = params.get("yieldId");
+                if (yieldIdObj != null) {
+                    Long yieldId = Long.parseLong(yieldIdObj.toString());
+                    YieldStatistics yield = yieldStatisticsService.getById(yieldId);
+                    if (yield != null) {
+                        String areaName = yield.getAreaId() != null ? getAreaNameById(yield.getAreaId()) : null;
+                        String breedName = yield.getBreedId() != null ? getBreedNameById(yield.getBreedId()) : null;
+                        if (areaName != null || breedName != null) {
+                            content.append(": ").append(areaName != null ? areaName : "").append(breedName != null ? " " + breedName : "");
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 根据区域ID获取区域名称
+     */
+    private String getAreaNameById(Long areaId) {
+        try {
+            BaseArea area = areaService.getById(areaId);
+            return area != null ? area.getAreaName() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
+     * 根据品种ID获取品种名称
+     */
+    private String getBreedNameById(Long breedId) {
+        try {
+            BaseBreed breed = breedService.getById(breedId);
+            return breed != null ? breed.getBreedName() : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
 

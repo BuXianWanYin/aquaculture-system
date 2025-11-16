@@ -60,7 +60,7 @@ public class SysMessageController {
      * 发送消息
      */
     @PostMapping
-    @RequiresRole({1, 2}) // 系统管理员、部门管理员可以发送消息
+    @RequiresRole({1}) // 系统管理员可以发送消息
     public Result<Boolean> sendMessage(@RequestBody SysMessage message) {
         try {
             boolean success = messageService.sendMessage(message);

@@ -38,7 +38,7 @@ public class FileUploadController {
      * 上传产量凭证文件
      */
     @PostMapping("/yieldEvidence")
-    @RequiresRole({1, 2, 3}) // 系统管理员、部门管理员、普通操作员
+    @RequiresRole({1, 3}) // 系统管理员、普通操作员
     public Result<Map<String, Object>> uploadYieldEvidence(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "yieldId", required = false) Long yieldId) {

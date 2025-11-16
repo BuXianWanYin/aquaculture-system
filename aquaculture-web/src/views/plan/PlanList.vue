@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>养殖计划管理</span>
-          <el-button type="primary" @click="handleAdd">
+          <el-button v-if="hasPermission('plan:add')" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>
             新增计划
           </el-button>
@@ -70,10 +70,10 @@
         </el-table-column>
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button type="success" link size="small" @click="handleApprove(row)" v-if="row.status === 0">审批</el-button>
-            <el-button type="warning" link size="small" @click="handleAdjust(row)">调整</el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="hasPermission('plan:edit')" type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="hasPermission('plan:approve') && row.status === 0" type="success" link size="small" @click="handleApprove(row)">审批</el-button>
+            <el-button v-if="hasPermission('plan:adjust:add')" type="warning" link size="small" @click="handleAdjust(row)">调整</el-button>
+            <el-button v-if="hasPermission('plan:delete')" type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -245,8 +245,12 @@ import { getPlanList, savePlan, updatePlan, deletePlan, approvePlan } from '@/ap
 import { saveAdjust } from '@/api/planAdjust'
 import { getAllAreas } from '@/api/area'
 import { getAllBreeds } from '@/api/breed'
-import { useUserStore } from '@/stores/user'
 import { formatDateTime, formatDate } from '@/utils/date'
+import { usePermission } from '@/composables/usePermission'
+import { useUserStore } from '@/stores/user'
+
+const { isOperator, isAdminOrManager, hasPermission } = usePermission()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const tableData = ref([])
@@ -257,7 +261,6 @@ const dialogTitle = ref('新增计划')
 const isEdit = ref(false)
 const planFormRef = ref(null)
 const adjustFormRef = ref(null)
-const userStore = useUserStore()
 const currentPlan = ref({})
 const areaList = ref([])
 const breedList = ref([])

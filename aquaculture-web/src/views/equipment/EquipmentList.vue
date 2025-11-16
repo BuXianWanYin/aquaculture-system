@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>设备管理</span>
-          <el-button type="primary" @click="handleAdd">
+          <el-button v-if="hasPermission('equipment:add')" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>
             新增设备
           </el-button>
@@ -50,8 +50,9 @@
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="hasPermission('equipment:edit')" type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="hasPermission('equipment:delete')" type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+            <span v-if="!hasPermission('equipment:edit') && !hasPermission('equipment:delete')" style="color: #909399;">无操作权限</span>
           </template>
         </el-table-column>
       </el-table>
@@ -136,6 +137,9 @@ import { Plus } from '@element-plus/icons-vue'
 import { getEquipmentList, saveEquipment, updateEquipment, deleteEquipment } from '@/api/equipment'
 import { getAllAreas } from '@/api/area'
 import { formatDateTime } from '@/utils/date'
+import { usePermission } from '@/composables/usePermission'
+
+const { hasPermission } = usePermission()
 
 const loading = ref(false)
 const tableData = ref([])

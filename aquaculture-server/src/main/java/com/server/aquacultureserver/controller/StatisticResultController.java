@@ -28,7 +28,7 @@ public class StatisticResultController {
      * 分页查询统计结果列表
      */
     @GetMapping("/page")
-    @RequiresRole({1, 2, 4}) // 系统管理员、部门管理员、决策层
+    @RequiresRole({1, 4}) // 系统管理员、决策层
     public Result<Page<StatisticResult>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -46,7 +46,7 @@ public class StatisticResultController {
      * 根据ID查询统计结果详情
      */
     @GetMapping("/{statisticId}")
-    @RequiresRole({1, 2, 4}) // 系统管理员、部门管理员、决策层
+    @RequiresRole({1, 4}) // 系统管理员、决策层
     public Result<StatisticResult> getById(@PathVariable Long statisticId) {
         StatisticResult statistic = statisticService.getById(statisticId);
         return Result.success(statistic);
@@ -56,7 +56,7 @@ public class StatisticResultController {
      * 新增统计结果
      */
     @PostMapping
-    @RequiresRole({1, 2}) // 系统管理员、部门管理员
+    @RequiresRole({1}) // 系统管理员
     public Result<Boolean> saveStatistic(@RequestBody StatisticResult statistic) {
         try {
             boolean success = statisticService.saveStatistic(statistic);
@@ -70,7 +70,7 @@ public class StatisticResultController {
      * 更新统计结果
      */
     @PutMapping
-    @RequiresRole({1, 2}) // 系统管理员、部门管理员
+    @RequiresRole({1}) // 系统管理员
     public Result<Boolean> updateStatistic(@RequestBody StatisticResult statistic) {
         try {
             boolean success = statisticService.updateStatistic(statistic);
@@ -112,7 +112,7 @@ public class StatisticResultController {
      * 获取月度产量趋势数据
      */
     @GetMapping("/monthlyYieldTrend")
-    @RequiresRole({1, 2, 4}) // 系统管理员、部门管理员、决策层
+    @RequiresRole({1, 4}) // 系统管理员、决策层
     public Result<List<Map<String, Object>>> getMonthlyYieldTrend(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
@@ -124,7 +124,7 @@ public class StatisticResultController {
      * 获取品种产量占比数据
      */
     @GetMapping("/breedYieldRatio")
-    @RequiresRole({1, 2, 4}) // 系统管理员、部门管理员、决策层
+    @RequiresRole({1, 4}) // 系统管理员、决策层
     public Result<List<Map<String, Object>>> getBreedYieldRatio(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
@@ -136,7 +136,7 @@ public class StatisticResultController {
      * 获取区域产量对比数据
      */
     @GetMapping("/areaYieldComparison")
-    @RequiresRole({1, 2, 4}) // 系统管理员、部门管理员、决策层
+    @RequiresRole({1, 4}) // 系统管理员、决策层
     public Result<List<Map<String, Object>>> getAreaYieldComparison(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
@@ -148,7 +148,7 @@ public class StatisticResultController {
      * 获取计划完成情况统计
      */
     @GetMapping("/planCompletionStats")
-    @RequiresRole({1, 2, 4}) // 系统管理员、部门管理员、决策层
+    @RequiresRole({1, 4}) // 系统管理员、决策层
     public Result<Map<String, Object>> getPlanCompletionStats() {
         Map<String, Object> data = statisticService.getPlanCompletionStats();
         return Result.success(data);
