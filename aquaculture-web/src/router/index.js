@@ -62,6 +62,18 @@ const routes = [
         name: 'Yield',
         component: () => import('@/views/yield/YieldList.vue'),
         meta: { title: '产量统计管理', roles: [1, 2, 3, 4] }
+      },
+      {
+        path: 'operLog',
+        name: 'OperLog',
+        component: () => import('@/views/operLog/OperLogList.vue'),
+        meta: { title: '操作日志管理', roles: [1, 2] }
+      },
+      {
+        path: 'statistic',
+        name: 'Statistic',
+        component: () => import('@/views/statistic/StatisticList.vue'),
+        meta: { title: '数据报表与分析', roles: [1, 2, 4] }
       }
     ]
   }

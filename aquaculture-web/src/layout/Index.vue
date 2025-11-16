@@ -50,6 +50,14 @@
           <el-icon><DataAnalysis /></el-icon>
           <span>产量统计管理</span>
         </el-menu-item>
+        <el-menu-item index="/operLog" v-if="canAccess([1, 2])">
+          <el-icon><Document /></el-icon>
+          <span>操作日志管理</span>
+        </el-menu-item>
+        <el-menu-item index="/statistic" v-if="canAccess([1, 2, 4])">
+          <el-icon><DataAnalysis /></el-icon>
+          <span>数据报表与分析</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
