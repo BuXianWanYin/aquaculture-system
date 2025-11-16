@@ -6,7 +6,7 @@
           <span>用户管理</span>
           <div>
             <el-badge :value="pendingCount" :hidden="pendingCount === 0" class="pending-badge">
-              <el-button type="warning" @click="activeTab = 'pending'" v-if="userStore.userInfo?.roleId === 1">
+              <el-button type="warning" @click="activeTab = 'pending'" v-if="hasPermission('system:user:view')">
                 待审核用户
               </el-button>
             </el-badge>
@@ -64,7 +64,7 @@
         </el-table-column>
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
-            <el-button v-if="row.status === 2 && userStore.userInfo?.roleId === 1" type="success" link size="small" @click="handleApprove(row)">
+            <el-button v-if="row.status === 2 && hasPermission('system:user:approve')" type="success" link size="small" @click="handleApprove(row)">
               审核
             </el-button>
             <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
@@ -85,11 +85,11 @@
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
         />
-          </div>
+      </div>
         </el-tab-pane>
         
         <!-- 待审核用户标签页 -->
-        <el-tab-pane label="待审核用户" name="pending" v-if="userStore.userInfo?.roleId === 1">
+        <el-tab-pane label="待审核用户" name="pending" v-if="hasPermission('system:user:view')">
           <el-table :data="pendingUsers" v-loading="pendingLoading" border stripe style="width: 100%">
             <el-table-column type="index" label="序号" width="60" />
             <el-table-column prop="username" label="用户名" min-width="120" />
@@ -239,9 +239,11 @@ import { getUserList, saveUser, updateUser, deleteUser, resetPassword, getPendin
 import { getAllRoles } from '@/api/role'
 import { getAllAreas } from '@/api/area'
 import { useUserStore } from '@/stores/user'
+import { usePermission } from '@/composables/usePermission'
 import { formatDateTime } from '@/utils/date'
 
 const userStore = useUserStore()
+const { hasPermission } = usePermission()
 const loading = ref(false)
 const pendingLoading = ref(false)
 const tableData = ref([])
@@ -470,7 +472,7 @@ const handleCurrentChange = () => {
 
 // 加载待审核用户列表
 const loadPendingUsers = async () => {
-  if (userStore.userInfo?.roleId !== 1) return // 只有管理员可以查看
+  if (!hasPermission('system:user:view')) return // 需要用户查看权限
   
   pendingLoading.value = true
   try {
@@ -597,7 +599,7 @@ const loadAreaList = async () => {
 onMounted(() => {
   loadData()
   loadRoleList()
-  if (userStore.userInfo?.roleId === 1) {
+  if (hasPermission('system:user:view')) {
     loadAreaList()
     loadPendingUsers()
   }

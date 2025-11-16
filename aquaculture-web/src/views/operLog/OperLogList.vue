@@ -5,7 +5,7 @@
         <div class="card-header">
           <span>操作日志管理</span>
           <div>
-            <el-button type="danger" @click="handleClear" :disabled="!hasPermission">
+            <el-button type="danger" @click="handleClear" :disabled="!canViewLog">
               <el-icon><Delete /></el-icon>
               清空日志
             </el-button>
@@ -86,7 +86,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right" v-if="hasPermission">
+        <el-table-column label="操作" width="150" fixed="right" v-if="canViewLog">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleView(row)">查看</el-button>
             <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
@@ -151,10 +151,12 @@ import { Delete } from '@element-plus/icons-vue'
 import { getOperLogList, getOperLogById, deleteOperLog, clearOperLog } from '@/api/operLog'
 import { formatDateTime } from '@/utils/date'
 import { useUserStore } from '@/stores/user'
+import { usePermission } from '@/composables/usePermission'
 
 const userStore = useUserStore()
-const hasPermission = computed(() => {
-  return userStore.userInfo && userStore.userInfo.roleId === 1
+const { hasPermission } = usePermission()
+const canViewLog = computed(() => {
+  return hasPermission('log:view')
 })
 
 const loading = ref(false)

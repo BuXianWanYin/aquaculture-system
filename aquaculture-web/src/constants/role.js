@@ -6,7 +6,8 @@
 export const ROLE_NAMES = {
   ADMIN: '管理员',
   OPERATOR: '普通操作员',
-  DECISION_MAKER: '决策层'
+  DECISION_MAKER: '决策层',
+  DEPARTMENT_MANAGER: '部门管理员'
 }
 
 /**
@@ -31,6 +32,13 @@ export function isDecisionMaker(roleName) {
 }
 
 /**
+ * 根据角色名称判断是否为部门管理员
+ */
+export function isDepartmentManager(roleName) {
+  return roleName === ROLE_NAMES.DEPARTMENT_MANAGER || roleName === '部门管理员'
+}
+
+/**
  * 检查用户角色是否在允许的角色列表中（基于角色名称）
  */
 export function hasRole(roleNames, userRoleName) {
@@ -45,6 +53,8 @@ export function hasRole(roleNames, userRoleName) {
         return isOperator(userRoleName)
       } else if (roleName === ROLE_NAMES.DECISION_MAKER) {
         return isDecisionMaker(userRoleName)
+      } else if (roleName === ROLE_NAMES.DEPARTMENT_MANAGER) {
+        return isDepartmentManager(userRoleName)
       }
       return roleName === userRoleName
     })

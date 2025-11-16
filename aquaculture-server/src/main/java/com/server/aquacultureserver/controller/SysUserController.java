@@ -1,7 +1,7 @@
 package com.server.aquacultureserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.server.aquacultureserver.annotation.RequiresRole;
+import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.SysMessage;
 import com.server.aquacultureserver.domain.SysOperLog;
@@ -165,7 +165,7 @@ public class SysUserController {
      * 分页查询用户列表
      */
     @GetMapping("/page")
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"system:user:view"}) // 需要用户查看权限
     public Result<Page<SysUser>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -190,7 +190,7 @@ public class SysUserController {
      * 新增用户
      */
     @PostMapping
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"system:user:add"}) // 需要用户新增权限
     public Result<Boolean> saveUser(@RequestBody SysUser user) {
         try {
             boolean success = userService.saveUser(user);
@@ -204,7 +204,7 @@ public class SysUserController {
      * 更新用户
      */
     @PutMapping
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"system:user:edit"}) // 需要用户编辑权限
     public Result<Boolean> updateUser(@RequestBody SysUser user) {
         try {
             boolean success = userService.updateUser(user);
@@ -218,7 +218,7 @@ public class SysUserController {
      * 删除用户
      */
     @DeleteMapping("/{userId}")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:user:delete"}) // 需要用户删除权限
     public Result<Boolean> deleteUser(@PathVariable Long userId) {
         try {
             boolean success = userService.deleteUser(userId);
@@ -248,7 +248,7 @@ public class SysUserController {
      * 重置密码
      */
     @PostMapping("/resetPassword")
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"system:user:reset"}) // 需要用户密码重置权限
     public Result<Boolean> resetPassword(
             @RequestParam Long userId,
             @RequestParam String newPassword) {
@@ -405,7 +405,7 @@ public class SysUserController {
      * 审核用户（通过或拒绝）
      */
     @PostMapping("/approve")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:user:approve"}) // 需要用户审核权限
     public Result<Boolean> approveUser(
             @RequestParam Long userId,
             @RequestParam Integer status, // 1-通过，0-拒绝
@@ -460,7 +460,7 @@ public class SysUserController {
      * 查询待审核用户列表
      */
     @GetMapping("/pending")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:user:view"}) // 需要用户查看权限
     public Result<List<SysUser>> getPendingUsers() {
         try {
             List<SysUser> users = userService.getPendingUsers();

@@ -29,12 +29,16 @@
             <el-icon><UserFilled /></el-icon>
             <span>角色管理</span>
           </el-menu-item>
-          <el-menu-item index="/permission" v-if="canAccess([ROLE_NAMES.ADMIN])">
-            <el-icon><Key /></el-icon>
-            <span>权限管理</span>
-          </el-menu-item>
-        </el-sub-menu>
-        <el-menu-item index="/breed" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR])">
+        <el-menu-item index="/permission" v-if="canAccess([ROLE_NAMES.ADMIN])">
+          <el-icon><Key /></el-icon>
+          <span>权限管理</span>
+        </el-menu-item>
+      </el-sub-menu>
+      <el-menu-item index="/department" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.DEPARTMENT_MANAGER])">
+        <el-icon><OfficeBuilding /></el-icon>
+        <span>部门管理</span>
+      </el-menu-item>
+      <el-menu-item index="/breed" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR])">
           <el-icon><Collection /></el-icon>
           <span>养殖品种</span>
         </el-menu-item>
@@ -46,11 +50,11 @@
           <el-icon><Tools /></el-icon>
           <span>设备管理</span>
         </el-menu-item>
-        <el-menu-item index="/plan" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER])">
+        <el-menu-item index="/plan" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER, ROLE_NAMES.DEPARTMENT_MANAGER])">
           <el-icon><Document /></el-icon>
           <span>养殖计划管理</span>
         </el-menu-item>
-        <el-menu-item index="/yield" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER])">
+        <el-menu-item index="/yield" v-if="canAccess([ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER, ROLE_NAMES.DEPARTMENT_MANAGER])">
           <el-icon><DataAnalysis /></el-icon>
           <span>产量统计管理</span>
         </el-menu-item>
@@ -100,11 +104,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { ROLE_NAMES, hasRole } from '@/constants/role'
+import { getCurrentUser } from '@/api/user'
 import {
   House,
   User,
@@ -117,7 +122,8 @@ import {
   Document,
   DataAnalysis,
   Key,
-  Bell
+  Bell,
+  OfficeBuilding
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -143,6 +149,22 @@ const handleCommand = (command) => {
     router.push('/login')
   }
 }
+
+// 组件挂载时刷新用户信息，确保获取最新权限
+onMounted(async () => {
+  if (userStore.token) {
+    try {
+      const res = await getCurrentUser()
+      if (res.code === 200 && res.data) {
+        // 更新用户信息，包括最新的权限列表
+        userStore.setUserInfo(res.data)
+      }
+    } catch (error) {
+      // 如果获取用户信息失败（如token过期），静默处理
+      console.error('刷新用户信息失败:', error)
+    }
+  }
+})
 </script>
 
 <style scoped>

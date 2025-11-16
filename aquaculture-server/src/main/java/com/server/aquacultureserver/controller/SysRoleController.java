@@ -1,7 +1,7 @@
 package com.server.aquacultureserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.server.aquacultureserver.annotation.RequiresRole;
+import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.SysRole;
 import com.server.aquacultureserver.service.SysRoleService;
@@ -34,7 +34,7 @@ public class SysRoleController {
      * 分页查询角色列表
      */
     @GetMapping("/page")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:role:view"}) // 需要角色查看权限
     public Result<Page<SysRole>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -56,7 +56,7 @@ public class SysRoleController {
      * 新增角色
      */
     @PostMapping
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:role:add"}) // 需要角色新增权限
     public Result<Boolean> saveRole(@RequestBody SysRole role) {
         try {
             boolean success = roleService.saveRole(role);
@@ -70,7 +70,7 @@ public class SysRoleController {
      * 更新角色
      */
     @PutMapping
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:role:edit"}) // 需要角色编辑权限
     public Result<Boolean> updateRole(@RequestBody SysRole role) {
         try {
             boolean success = roleService.updateRole(role);
@@ -84,7 +84,7 @@ public class SysRoleController {
      * 删除角色
      */
     @DeleteMapping("/{roleId}")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:role:delete"}) // 需要角色删除权限
     public Result<Boolean> deleteRole(@PathVariable Long roleId) {
         try {
             boolean success = roleService.deleteRole(roleId);

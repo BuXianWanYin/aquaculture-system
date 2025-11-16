@@ -1,7 +1,7 @@
 package com.server.aquacultureserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.server.aquacultureserver.annotation.RequiresRole;
+import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.YieldStatistics;
 import com.server.aquacultureserver.service.YieldStatisticsService;
@@ -59,7 +59,7 @@ public class YieldStatisticsController {
      * 新增产量统计
      */
     @PostMapping
-    @RequiresRole({1, 3}) // 系统管理员、普通操作员
+    @RequiresPermission({"yield:add"}) // 需要产量新增权限
     public Result<YieldStatistics> saveStatistics(@RequestBody YieldStatistics statistics) {
         try {
             boolean success = statisticsService.saveStatistics(statistics);
@@ -78,7 +78,7 @@ public class YieldStatisticsController {
      * 更新产量统计
      */
     @PutMapping
-    @RequiresRole({1}) // 系统管理员（普通操作员不能编辑）
+    @RequiresPermission({"yield:edit"}) // 需要产量编辑权限
     public Result<Boolean> updateStatistics(@RequestBody YieldStatistics statistics) {
         try {
             boolean success = statisticsService.updateStatistics(statistics);
@@ -92,7 +92,7 @@ public class YieldStatisticsController {
      * 删除产量统计
      */
     @DeleteMapping("/{yieldId}")
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"yield:delete"}) // 需要产量删除权限
     public Result<Boolean> deleteStatistics(@PathVariable Long yieldId) {
         try {
             boolean success = statisticsService.deleteStatistics(yieldId);
@@ -106,7 +106,7 @@ public class YieldStatisticsController {
      * 审核产量统计
      */
     @PostMapping("/audit")
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"yield:audit"}) // 需要产量审核权限
     public Result<Boolean> auditStatistics(@RequestBody Map<String, Object> params) {
         try {
             Long yieldId = Long.valueOf(params.get("yieldId").toString());

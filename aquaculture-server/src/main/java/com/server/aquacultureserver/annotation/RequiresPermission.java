@@ -6,16 +6,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 角色权限注解
- * 用于标记需要特定角色才能访问的方法
+ * 权限注解
+ * 用于标记需要特定权限才能访问的方法
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RequiresRole {
+public @interface RequiresPermission {
     /**
-     * 允许访问的角色ID数组
+     * 允许访问的权限代码数组
      */
-    int[] value();
+    String[] value();
     
     /**
      * 错误提示信息

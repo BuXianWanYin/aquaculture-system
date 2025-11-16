@@ -1,6 +1,6 @@
 package com.server.aquacultureserver.controller;
 
-import com.server.aquacultureserver.annotation.RequiresRole;
+import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.YieldEvidence;
 import com.server.aquacultureserver.service.YieldEvidenceService;
@@ -33,7 +33,7 @@ public class YieldEvidenceController {
      * 新增凭证
      */
     @PostMapping
-    @RequiresRole({1, 2, 3}) // 系统管理员、部门管理员、普通操作员
+    @RequiresPermission({"yield:evidence:add"}) // 需要产量凭证新增权限
     public Result<Boolean> saveEvidence(@RequestBody YieldEvidence evidence) {
         try {
             boolean success = evidenceService.saveEvidence(evidence);
@@ -47,7 +47,7 @@ public class YieldEvidenceController {
      * 删除凭证
      */
     @DeleteMapping("/{evidenceId}")
-    @RequiresRole({1, 2, 3}) // 系统管理员、部门管理员、普通操作员
+    @RequiresPermission({"yield:evidence:delete"}) // 需要产量凭证删除权限
     public Result<Boolean> deleteEvidence(@PathVariable Long evidenceId) {
         try {
             boolean success = evidenceService.deleteEvidence(evidenceId);

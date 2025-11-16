@@ -1,7 +1,7 @@
 package com.server.aquacultureserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.server.aquacultureserver.annotation.RequiresRole;
+import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.SysOperLog;
 import com.server.aquacultureserver.service.SysOperLogService;
@@ -26,7 +26,7 @@ public class SysOperLogController {
      * 分页查询操作日志列表
      */
     @GetMapping("/page")
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"log:list"}) // 需要日志列表查看权限
     public Result<Page<SysOperLog>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -44,7 +44,7 @@ public class SysOperLogController {
      * 根据ID查询操作日志详情
      */
     @GetMapping("/{logId}")
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"log:detail"}) // 需要日志详情查看权限
     public Result<SysOperLog> getById(@PathVariable Long logId) {
         SysOperLog log = operLogService.getById(logId);
         return Result.success(log);
@@ -54,7 +54,7 @@ public class SysOperLogController {
      * 删除操作日志
      */
     @DeleteMapping("/{logId}")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"log:list"}) // 需要日志列表查看权限（删除日志需要列表权限）
     public Result<Boolean> deleteLog(@PathVariable Long logId) {
         try {
             boolean success = operLogService.deleteLog(logId);
@@ -68,7 +68,7 @@ public class SysOperLogController {
      * 批量删除操作日志
      */
     @DeleteMapping("/batch")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"log:list"}) // 需要日志列表查看权限
     public Result<Boolean> deleteBatch(@RequestBody Long[] logIds) {
         try {
             boolean success = operLogService.deleteBatch(logIds);
@@ -82,7 +82,7 @@ public class SysOperLogController {
      * 清空操作日志
      */
     @DeleteMapping("/clear")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"log:list"}) // 需要日志列表查看权限
     public Result<Boolean> clearLog() {
         try {
             boolean success = operLogService.clearLog();

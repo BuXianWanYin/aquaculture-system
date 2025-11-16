@@ -1,7 +1,7 @@
 package com.server.aquacultureserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.server.aquacultureserver.annotation.RequiresRole;
+import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.AquaculturePlan;
 import com.server.aquacultureserver.service.AquaculturePlanService;
@@ -59,7 +59,7 @@ public class AquaculturePlanController {
      * 新增计划
      */
     @PostMapping
-    @RequiresRole({1, 3}) // 系统管理员、普通操作员
+    @RequiresPermission({"plan:add"}) // 需要计划新增权限
     public Result<Boolean> savePlan(@RequestBody AquaculturePlan plan) {
         try {
             boolean success = planService.savePlan(plan);
@@ -73,7 +73,7 @@ public class AquaculturePlanController {
      * 更新计划
      */
     @PutMapping
-    @RequiresRole({1, 3}) // 系统管理员、普通操作员
+    @RequiresPermission({"plan:edit"}) // 需要计划编辑权限
     public Result<Boolean> updatePlan(@RequestBody AquaculturePlan plan) {
         try {
             boolean success = planService.updatePlan(plan);
@@ -87,7 +87,7 @@ public class AquaculturePlanController {
      * 删除计划
      */
     @DeleteMapping("/{planId}")
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"plan:delete"}) // 需要计划删除权限
     public Result<Boolean> deletePlan(@PathVariable Long planId) {
         try {
             boolean success = planService.deletePlan(planId);
@@ -101,7 +101,7 @@ public class AquaculturePlanController {
      * 审批计划
      */
     @PostMapping("/approve")
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"plan:approve"}) // 需要计划审批权限
     public Result<Boolean> approvePlan(@RequestBody Map<String, Object> params) {
         try {
             Long planId = Long.valueOf(params.get("planId").toString());
@@ -110,7 +110,26 @@ public class AquaculturePlanController {
             Integer status = Integer.valueOf(params.get("status").toString());
             
             boolean success = planService.approvePlan(planId, approverId, approveOpinion, status);
+            
+            // 审批通过后检查计划状态
+            if (success && status == 1) {
+                planService.checkAndUpdatePlanStatus(planId);
+            }
+            
             return Result.success("审批成功", success);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取计划完成率
+     */
+    @GetMapping("/{planId}/completion-rate")
+    public Result<Double> getCompletionRate(@PathVariable Long planId) {
+        try {
+            Double rate = planService.calculateCompletionRate(planId);
+            return Result.success(rate);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

@@ -1,7 +1,7 @@
 package com.server.aquacultureserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.server.aquacultureserver.annotation.RequiresRole;
+import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.SysMessage;
 import com.server.aquacultureserver.service.SysMessageService;
@@ -60,7 +60,7 @@ public class SysMessageController {
      * 发送消息
      */
     @PostMapping
-    @RequiresRole({1}) // 系统管理员可以发送消息
+    @RequiresPermission({"message:send"}) // 需要消息发送权限
     public Result<Boolean> sendMessage(@RequestBody SysMessage message) {
         try {
             boolean success = messageService.sendMessage(message);

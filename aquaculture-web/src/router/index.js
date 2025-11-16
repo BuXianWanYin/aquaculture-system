@@ -47,6 +47,12 @@ const routes = [
         meta: { title: '权限管理', roles: [ROLE_NAMES.ADMIN] }
       },
       {
+        path: 'department',
+        name: 'Department',
+        component: () => import('@/views/department/DepartmentList.vue'),
+        meta: { title: '部门管理', roles: [ROLE_NAMES.ADMIN, ROLE_NAMES.DEPARTMENT_MANAGER] }
+      },
+      {
         path: 'breed',
         name: 'Breed',
         component: () => import('@/views/breed/BreedList.vue'),
@@ -68,13 +74,13 @@ const routes = [
         path: 'plan',
         name: 'Plan',
         component: () => import('@/views/plan/PlanList.vue'),
-        meta: { title: '养殖计划管理', roles: [ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER] }
+        meta: { title: '养殖计划管理', roles: [ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER, ROLE_NAMES.DEPARTMENT_MANAGER] }
       },
       {
         path: 'yield',
         name: 'Yield',
         component: () => import('@/views/yield/YieldList.vue'),
-        meta: { title: '产量统计管理', roles: [ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER] }
+        meta: { title: '产量统计管理', roles: [ROLE_NAMES.ADMIN, ROLE_NAMES.OPERATOR, ROLE_NAMES.DECISION_MAKER, ROLE_NAMES.DEPARTMENT_MANAGER] }
       },
       {
         path: 'operLog',

@@ -48,6 +48,9 @@ public class OperLogAspect {
     @Autowired
     private YieldStatisticsService yieldStatisticsService;
     
+    @Autowired
+    private BaseDepartmentService departmentService;
+    
     @Around("execution(* com.server.aquacultureserver.controller..*.*(..))")
     public Object recordOperLog(ProceedingJoinPoint joinPoint) throws Throwable {
         // 获取请求对象
@@ -203,6 +206,8 @@ public class OperLogAspect {
             return "用户管理";
         } else if (requestURI.contains("/role")) {
             return "角色管理";
+        } else if (requestURI.contains("/department")) {
+            return "部门管理";
         } else if (requestURI.contains("/breed")) {
             return "养殖品种管理";
         } else if (requestURI.contains("/area")) {
@@ -281,6 +286,19 @@ public class OperLogAspect {
                 appendRoleIdFromPath(content, requestURI);
             } else if ("GET".equals(method)) {
                 content.append("查询角色列表");
+            }
+        } else if (requestURI.contains("/department")) {
+            if ("POST".equals(method)) {
+                content.append("新增部门");
+                appendDepartmentName(content, joinPoint);
+            } else if ("PUT".equals(method)) {
+                content.append("修改部门");
+                appendDepartmentName(content, joinPoint);
+            } else if ("DELETE".equals(method)) {
+                content.append("删除部门");
+                appendDepartmentIdFromPath(content, requestURI);
+            } else if ("GET".equals(method)) {
+                content.append("查询部门列表");
             }
         } else if (requestURI.contains("/breed")) {
             if ("POST".equals(method)) {
@@ -746,6 +764,49 @@ public class OperLogAspect {
             return breed != null ? breed.getBreedName() : null;
         } catch (Exception e) {
             return null;
+        }
+    }
+    
+    /**
+     * 从路径中提取部门ID并转换为部门名
+     */
+    private void appendDepartmentIdFromPath(StringBuilder content, String requestURI) {
+        try {
+            Pattern pattern = Pattern.compile("/department/(\\d+)");
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.find()) {
+                Long departmentId = Long.parseLong(matcher.group(1));
+                BaseDepartment department = departmentService.getById(departmentId);
+                if (department != null) {
+                    content.append(": ").append(department.getDepartmentName());
+                } else {
+                    content.append(": ").append(departmentId);
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
+        }
+    }
+    
+    /**
+     * 从实体对象中提取部门名
+     */
+    private void appendDepartmentName(StringBuilder content, ProceedingJoinPoint joinPoint) {
+        try {
+            Object[] args = joinPoint.getArgs();
+            if (args != null && args.length > 0 && args[0] instanceof BaseDepartment) {
+                BaseDepartment department = (BaseDepartment) args[0];
+                if (department.getDepartmentId() != null && department.getDepartmentName() == null) {
+                    BaseDepartment dbDepartment = departmentService.getById(department.getDepartmentId());
+                    if (dbDepartment != null) {
+                        content.append(": ").append(dbDepartment.getDepartmentName());
+                    }
+                } else if (department.getDepartmentName() != null) {
+                    content.append(": ").append(department.getDepartmentName());
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误
         }
     }
 }

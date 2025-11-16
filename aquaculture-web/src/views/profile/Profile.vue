@@ -47,7 +47,7 @@
               <el-input v-model="profileForm.address" placeholder="请输入家庭地址" />
             </el-form-item>
             <el-form-item 
-              v-if="userStore.userInfo?.roleId !== 1" 
+              v-if="!isAdmin" 
               label="所属养殖区域" 
               prop="areaId"
             >
@@ -112,8 +112,10 @@ import { Plus } from '@element-plus/icons-vue'
 import { getCurrentUser, updateProfile, changePassword, uploadAvatar } from '@/api/user'
 import { getAllAreas } from '@/api/area'
 import { useUserStore } from '@/stores/user'
+import { useRole } from '@/composables/useRole'
 
 const userStore = useUserStore()
+const { isAdmin } = useRole()
 const profileFormRef = ref(null)
 const passwordFormRef = ref(null)
 const loading = ref(false)
@@ -316,7 +318,7 @@ const getAvatarUrl = (avatarPath) => {
 onMounted(() => {
   loadUserInfo()
   // 非admin用户才加载区域列表
-  if (userStore.userInfo?.roleId !== 1) {
+  if (!isAdmin) {
     loadAreaList()
   }
 })

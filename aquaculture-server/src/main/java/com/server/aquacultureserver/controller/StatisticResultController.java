@@ -1,7 +1,7 @@
 package com.server.aquacultureserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.server.aquacultureserver.annotation.RequiresRole;
+import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.StatisticResult;
 import com.server.aquacultureserver.service.StatisticResultService;
@@ -28,7 +28,7 @@ public class StatisticResultController {
      * 分页查询统计结果列表
      */
     @GetMapping("/page")
-    @RequiresRole({1, 4}) // 系统管理员、决策层
+    @RequiresPermission({"statistics:list"}) // 需要统计列表查看权限
     public Result<Page<StatisticResult>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -46,7 +46,7 @@ public class StatisticResultController {
      * 根据ID查询统计结果详情
      */
     @GetMapping("/{statisticId}")
-    @RequiresRole({1, 4}) // 系统管理员、决策层
+    @RequiresPermission({"statistics:list"}) // 需要统计列表查看权限
     public Result<StatisticResult> getById(@PathVariable Long statisticId) {
         StatisticResult statistic = statisticService.getById(statisticId);
         return Result.success(statistic);
@@ -56,7 +56,7 @@ public class StatisticResultController {
      * 新增统计结果
      */
     @PostMapping
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"statistics:list"}) // 需要统计列表查看权限（新增统计需要列表权限）
     public Result<Boolean> saveStatistic(@RequestBody StatisticResult statistic) {
         try {
             boolean success = statisticService.saveStatistic(statistic);
@@ -70,7 +70,7 @@ public class StatisticResultController {
      * 更新统计结果
      */
     @PutMapping
-    @RequiresRole({1}) // 系统管理员
+    @RequiresPermission({"statistics:list"}) // 需要统计列表查看权限
     public Result<Boolean> updateStatistic(@RequestBody StatisticResult statistic) {
         try {
             boolean success = statisticService.updateStatistic(statistic);
@@ -84,7 +84,7 @@ public class StatisticResultController {
      * 删除统计结果
      */
     @DeleteMapping("/{statisticId}")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"statistics:list"}) // 需要统计列表查看权限
     public Result<Boolean> deleteStatistic(@PathVariable Long statisticId) {
         try {
             boolean success = statisticService.deleteStatistic(statisticId);
@@ -98,7 +98,7 @@ public class StatisticResultController {
      * 批量删除统计结果
      */
     @DeleteMapping("/batch")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"statistics:list"}) // 需要统计列表查看权限
     public Result<Boolean> deleteBatch(@RequestBody Long[] statisticIds) {
         try {
             boolean success = statisticService.deleteBatch(statisticIds);
@@ -112,7 +112,7 @@ public class StatisticResultController {
      * 获取月度产量趋势数据
      */
     @GetMapping("/monthlyYieldTrend")
-    @RequiresRole({1, 4}) // 系统管理员、决策层
+    @RequiresPermission({"statistics:report"}) // 需要统计报表权限
     public Result<List<Map<String, Object>>> getMonthlyYieldTrend(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
@@ -124,7 +124,7 @@ public class StatisticResultController {
      * 获取品种产量占比数据
      */
     @GetMapping("/breedYieldRatio")
-    @RequiresRole({1, 4}) // 系统管理员、决策层
+    @RequiresPermission({"statistics:report"}) // 需要统计报表权限
     public Result<List<Map<String, Object>>> getBreedYieldRatio(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
@@ -136,7 +136,7 @@ public class StatisticResultController {
      * 获取区域产量对比数据
      */
     @GetMapping("/areaYieldComparison")
-    @RequiresRole({1, 4}) // 系统管理员、决策层
+    @RequiresPermission({"statistics:report"}) // 需要统计报表权限
     public Result<List<Map<String, Object>>> getAreaYieldComparison(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
@@ -148,9 +148,21 @@ public class StatisticResultController {
      * 获取计划完成情况统计
      */
     @GetMapping("/planCompletionStats")
-    @RequiresRole({1, 4}) // 系统管理员、决策层
+    @RequiresPermission({"statistics:report"}) // 需要统计报表权限
     public Result<Map<String, Object>> getPlanCompletionStats() {
         Map<String, Object> data = statisticService.getPlanCompletionStats();
+        return Result.success(data);
+    }
+    
+    /**
+     * 获取部门产量对比数据
+     */
+    @GetMapping("/departmentYieldComparison")
+    @RequiresPermission({"statistics:report"}) // 需要统计报表权限
+    public Result<List<Map<String, Object>>> getDepartmentYieldComparison(
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+        List<Map<String, Object>> data = statisticService.getDepartmentYieldComparison(startDate, endDate);
         return Result.success(data);
     }
 }

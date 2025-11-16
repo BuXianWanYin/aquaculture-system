@@ -142,7 +142,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="养殖计划" prop="planId">
-              <el-select v-model="yieldForm.planId" placeholder="请选择计划" style="width: 100%;" filterable>
+              <el-select v-model="yieldForm.planId" placeholder="请选择计划" style="width: 100%;" filterable @change="handlePlanChange">
                 <el-option 
                   v-for="plan in planList" 
                   :key="plan.planId" 
@@ -154,7 +154,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="所属区域" prop="areaId">
-              <el-select v-model="yieldForm.areaId" placeholder="请选择区域" style="width: 100%;" filterable>
+              <el-select v-model="yieldForm.areaId" placeholder="请选择区域" style="width: 100%;" filterable :disabled="!!yieldForm.planId">
                 <el-option 
                   v-for="area in areaList" 
                   :key="area.areaId" 
@@ -168,7 +168,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="养殖品种" prop="breedId">
-              <el-select v-model="yieldForm.breedId" placeholder="请选择品种" style="width: 100%;" filterable>
+              <el-select v-model="yieldForm.breedId" placeholder="请选择品种" style="width: 100%;" filterable :disabled="!!yieldForm.planId">
                 <el-option 
                   v-for="breed in breedList" 
                   :key="breed.breedId" 
@@ -185,7 +185,15 @@
           </el-col>
         </el-row>
         <el-form-item label="规格">
-          <el-input v-model="yieldForm.specification" placeholder="例如：500-800g" />
+          <el-select v-model="yieldForm.specification" placeholder="请选择规格" style="width: 100%;" filterable allow-create>
+            <el-option label="200g以下" value="200g以下" />
+            <el-option label="200-300g" value="200-300g" />
+            <el-option label="300-500g" value="300-500g" />
+            <el-option label="500-800g" value="500-800g" />
+            <el-option label="800-1000g" value="800-1000g" />
+            <el-option label="1000-1500g" value="1000-1500g" />
+            <el-option label="1500g以上" value="1500g以上" />
+          </el-select>
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -577,6 +585,24 @@ const handleEdit = async (row) => {
   dialogVisible.value = true
   // 加载已上传的凭证
   await loadFormEvidence(row.yieldId)
+}
+
+// 处理养殖计划选择变化
+const handlePlanChange = (planId) => {
+  if (!planId) {
+    // 如果清空了选择，也清空区域和品种
+    yieldForm.areaId = null
+    yieldForm.breedId = null
+    return
+  }
+  
+  // 从计划列表中查找选中的计划
+  const selectedPlan = planList.value.find(plan => plan.planId === planId)
+  if (selectedPlan) {
+    // 自动填充所属区域和养殖品种
+    yieldForm.areaId = selectedPlan.areaId || null
+    yieldForm.breedId = selectedPlan.breedId || null
+  }
 }
 
 const handleAudit = (row) => {

@@ -1,7 +1,7 @@
 package com.server.aquacultureserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.server.aquacultureserver.annotation.RequiresRole;
+import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.SysPermission;
 import com.server.aquacultureserver.dto.AssignPermissionDTO;
@@ -35,7 +35,7 @@ public class SysPermissionController {
      * 分页查询权限列表
      */
     @GetMapping("/page")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:permission:view"}) // 需要权限查看权限
     public Result<Page<SysPermission>> getPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
@@ -85,7 +85,7 @@ public class SysPermissionController {
      * 新增权限
      */
     @PostMapping
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:permission:add"}) // 需要权限新增权限
     public Result<Boolean> savePermission(@RequestBody SysPermission permission) {
         try {
             boolean success = permissionService.savePermission(permission);
@@ -99,7 +99,7 @@ public class SysPermissionController {
      * 更新权限
      */
     @PutMapping
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:permission:edit"}) // 需要权限编辑权限
     public Result<Boolean> updatePermission(@RequestBody SysPermission permission) {
         try {
             boolean success = permissionService.updatePermission(permission);
@@ -113,7 +113,7 @@ public class SysPermissionController {
      * 删除权限
      */
     @DeleteMapping("/{permissionId}")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:permission:delete"}) // 需要权限删除权限
     public Result<Boolean> deletePermission(@PathVariable Long permissionId) {
         try {
             boolean success = permissionService.deletePermission(permissionId);
@@ -127,7 +127,7 @@ public class SysPermissionController {
      * 为角色分配权限
      */
     @PostMapping("/assign")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:permission:view"}) // 需要权限查看权限（分配权限需要查看权限）
     public Result<Boolean> assignPermissionsToRole(@RequestBody AssignPermissionDTO dto) {
         try {
             if (dto == null || dto.getRoleId() == null) {
@@ -153,7 +153,7 @@ public class SysPermissionController {
      * 移除角色的所有权限
      */
     @DeleteMapping("/role/{roleId}")
-    @RequiresRole({1}) // 仅系统管理员
+    @RequiresPermission({"system:permission:view"}) // 需要权限查看权限
     public Result<Boolean> removeAllPermissionsFromRole(@PathVariable Long roleId) {
         try {
             boolean success = permissionService.removeAllPermissionsFromRole(roleId);

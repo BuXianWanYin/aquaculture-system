@@ -54,5 +54,20 @@ public interface AquaculturePlanService {
      * 统计待审批计划数
      */
     long countPendingPlans();
+    
+    /**
+     * 检查并更新计划状态（基于日期和产量）
+     */
+    void checkAndUpdatePlanStatus(Long planId);
+    
+    /**
+     * 计算计划的累计实际产量
+     */
+    java.math.BigDecimal calculateTotalYield(Long planId);
+    
+    /**
+     * 计算计划完成率（累计实际产量 / 目标产量 × 100%）
+     */
+    Double calculateCompletionRate(Long planId);
 }
 

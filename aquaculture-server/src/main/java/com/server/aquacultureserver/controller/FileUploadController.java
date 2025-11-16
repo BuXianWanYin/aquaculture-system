@@ -1,6 +1,6 @@
 package com.server.aquacultureserver.controller;
 
-import com.server.aquacultureserver.annotation.RequiresRole;
+import com.server.aquacultureserver.annotation.RequiresPermission;
 import com.server.aquacultureserver.common.Result;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -38,7 +38,7 @@ public class FileUploadController {
      * 上传产量凭证文件
      */
     @PostMapping("/yieldEvidence")
-    @RequiresRole({1, 3}) // 系统管理员、普通操作员
+    @RequiresPermission({"yield:evidence:add"}) // 需要产量凭证新增权限
     public Result<Map<String, Object>> uploadYieldEvidence(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "yieldId", required = false) Long yieldId) {

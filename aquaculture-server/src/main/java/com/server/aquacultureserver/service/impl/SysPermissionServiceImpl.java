@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -164,24 +166,54 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         
         // 批量插入新权限
         if (permissionIds != null && permissionIds.length > 0) {
+            // 使用Set去重，避免重复添加
+            Set<Long> allPermissionIds = new HashSet<>();
+            
+            // 先添加所有直接分配的权限
             for (Long permissionId : permissionIds) {
-                // 检查是否已存在
-                SysRolePermission exist = rolePermissionMapper.selectOne(
-                    new LambdaQueryWrapper<SysRolePermission>()
-                        .eq(SysRolePermission::getRoleId, roleId)
-                        .eq(SysRolePermission::getPermissionId, permissionId)
-                );
+                allPermissionIds.add(permissionId);
                 
-                if (exist == null) {
-                    SysRolePermission rolePermission = new SysRolePermission();
-                    rolePermission.setRoleId(roleId);
-                    rolePermission.setPermissionId(permissionId);
-                    rolePermissionMapper.insert(rolePermission);
+                // 自动添加父权限
+                SysPermission permission = permissionMapper.selectById(permissionId);
+                if (permission != null && permission.getParentId() != null && permission.getParentId() != 0) {
+                    // 递归添加所有父权限
+                    addParentPermissions(permission.getParentId(), allPermissionIds);
                 }
+            }
+            
+            // 批量插入所有权限（包括子权限和父权限）
+            for (Long permissionId : allPermissionIds) {
+                SysRolePermission rolePermission = new SysRolePermission();
+                rolePermission.setRoleId(roleId);
+                rolePermission.setPermissionId(permissionId);
+                rolePermissionMapper.insert(rolePermission);
             }
         }
         
         return true;
+    }
+    
+    /**
+     * 递归添加父权限
+     */
+    private void addParentPermissions(Long parentId, Set<Long> allPermissionIds) {
+        if (parentId == null || parentId == 0) {
+            return;
+        }
+        
+        // 如果已经添加过，避免重复
+        if (allPermissionIds.contains(parentId)) {
+            return;
+        }
+        
+        // 添加父权限
+        allPermissionIds.add(parentId);
+        
+        // 继续查找父权限的父权限
+        SysPermission parentPermission = permissionMapper.selectById(parentId);
+        if (parentPermission != null && parentPermission.getParentId() != null && parentPermission.getParentId() != 0) {
+            addParentPermissions(parentPermission.getParentId(), allPermissionIds);
+        }
     }
     
     @Override

@@ -126,3 +126,16 @@ export const getPlanCompletionStats = () => {
   })
 }
 
+/**
+ * 获取部门产量对比数据
+ * @param {Object} params - 查询参数 {startDate, endDate}
+ * @returns {Promise} 返回部门产量对比数据
+ */
+export const getDepartmentYieldComparison = (params) => {
+  return request({
+    url: '/statistic/departmentYieldComparison',
+    method: 'get',
+    params
+  })
+}
+

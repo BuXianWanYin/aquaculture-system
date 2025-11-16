@@ -87,3 +87,15 @@ export const approvePlan = (data) => {
   })
 }
 
+/**
+ * 获取计划完成率
+ * @param {Number} planId - 计划ID
+ * @returns {Promise} 返回完成率（0-100）
+ */
+export const getPlanCompletionRate = (planId) => {
+  return request({
+    url: `/plan/${planId}/completion-rate`,
+    method: 'get'
+  })
+}
+

@@ -22,6 +22,11 @@ public class RoleConstants {
     public static final String ROLE_DECISION_MAKER = "决策层";
     
     /**
+     * 部门管理员角色名称
+     */
+    public static final String ROLE_DEPARTMENT_MANAGER = "部门管理员";
+    
+    /**
      * 根据角色名称判断是否为管理员
      */
     public static boolean isAdmin(String roleName) {
@@ -40,6 +45,13 @@ public class RoleConstants {
      */
     public static boolean isDecisionMaker(String roleName) {
         return ROLE_DECISION_MAKER.equals(roleName) || "决策者".equals(roleName);
+    }
+    
+    /**
+     * 根据角色名称判断是否为部门管理员
+     */
+    public static boolean isDepartmentManager(String roleName) {
+        return ROLE_DEPARTMENT_MANAGER.equals(roleName);
     }
 }
 

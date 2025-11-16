@@ -63,5 +63,10 @@ public interface StatisticResultService {
      * 获取计划完成情况统计
      */
     Map<String, Object> getPlanCompletionStats();
+    
+    /**
+     * 获取部门产量对比数据
+     */
+    List<Map<String, Object>> getDepartmentYieldComparison(LocalDate startDate, LocalDate endDate);
 }
 

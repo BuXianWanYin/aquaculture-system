@@ -1,25 +1,25 @@
 <template>
-  <div class="area-list">
+  <div class="department-list">
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>养殖区域管理</span>
-          <el-button v-if="hasPermission('area:add')" type="primary" @click="handleAdd">
+          <span>部门管理</span>
+          <el-button v-if="hasPermission('department:add')" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>
-            新增区域
+            新增部门
           </el-button>
         </div>
       </template>
       
       <el-form :inline="true" :model="searchForm" class="search-form">
-        <el-form-item label="区域名称">
-          <el-input v-model="searchForm.areaName" placeholder="请输入区域名称" clearable />
+        <el-form-item label="部门名称">
+          <el-input v-model="searchForm.departmentName" placeholder="请输入部门名称" clearable />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 120px;">
             <el-option label="全部" value="" />
-            <el-option label="在用" :value="1" />
-            <el-option label="闲置" :value="0" />
+            <el-option label="启用" :value="1" />
+            <el-option label="禁用" :value="0" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -30,15 +30,13 @@
       
       <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
         <el-table-column type="index" label="序号" width="60" />
-        <el-table-column prop="areaCode" label="区域编号" min-width="120" />
-        <el-table-column prop="areaName" label="区域名称" min-width="150" />
-        <el-table-column prop="areaSize" label="面积(㎡)" min-width="120" />
-        <el-table-column prop="location" label="位置" min-width="200" />
-        <el-table-column prop="waterQuality" label="水质类型" min-width="120" />
+        <el-table-column prop="departmentCode" label="部门编号" min-width="120" />
+        <el-table-column prop="departmentName" label="部门名称" min-width="150" />
+        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'info'">
-              {{ row.status === 1 ? '在用' : '闲置' }}
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+              {{ row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -49,9 +47,9 @@
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button v-if="hasPermission('area:edit')" type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button v-if="hasPermission('area:delete')" type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
-            <span v-if="!hasPermission('area:edit') && !hasPermission('area:delete')" style="color: #909399;">无操作权限</span>
+            <el-button v-if="hasPermission('department:edit')" type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="hasPermission('department:delete')" type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+            <span v-if="!hasPermission('department:edit') && !hasPermission('department:delete')" style="color: #909399;">无操作权限</span>
           </template>
         </el-table-column>
       </el-table>
@@ -76,40 +74,24 @@
       @close="handleDialogClose"
     >
       <el-form
-        ref="areaFormRef"
-        :model="areaForm"
-        :rules="areaRules"
+        ref="departmentFormRef"
+        :model="departmentForm"
+        :rules="departmentRules"
         label-width="120px"
       >
-        <el-form-item label="区域编号" prop="areaCode">
-          <el-input v-model="areaForm.areaCode" />
+        <el-form-item label="部门编号" prop="departmentCode">
+          <el-input v-model="departmentForm.departmentCode" />
         </el-form-item>
-        <el-form-item label="区域名称" prop="areaName">
-          <el-input v-model="areaForm.areaName" />
+        <el-form-item label="部门名称" prop="departmentName">
+          <el-input v-model="departmentForm.departmentName" />
         </el-form-item>
-        <el-form-item label="所属部门" prop="departmentId">
-          <el-select v-model="areaForm.departmentId" placeholder="请选择部门" filterable style="width: 100%;">
-            <el-option 
-              v-for="dept in departmentList" 
-              :key="dept.departmentId" 
-              :label="dept.departmentName" 
-              :value="dept.departmentId" 
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="面积(㎡)" prop="areaSize">
-          <el-input-number v-model="areaForm.areaSize" :min="0" :precision="2" style="width: 100%;" />
-        </el-form-item>
-        <el-form-item label="位置">
-          <el-input v-model="areaForm.location" />
-        </el-form-item>
-        <el-form-item label="水质类型">
-          <el-input v-model="areaForm.waterQuality" />
+        <el-form-item label="描述">
+          <el-input v-model="departmentForm.description" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="areaForm.status">
-            <el-radio :label="1">在用</el-radio>
-            <el-radio :label="0">闲置</el-radio>
+          <el-radio-group v-model="departmentForm.status">
+            <el-radio :label="1">启用</el-radio>
+            <el-radio :label="0">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -124,8 +106,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAreaList, saveArea, updateArea, deleteArea } from '@/api/area'
-import { getAllDepartments } from '@/api/department'
+import { Plus } from '@element-plus/icons-vue'
+import { getDepartmentList, saveDepartment, updateDepartment, deleteDepartment } from '@/api/department'
 import { formatDateTime } from '@/utils/date'
 import { usePermission } from '@/composables/usePermission'
 
@@ -134,13 +116,12 @@ const { hasPermission } = usePermission()
 const loading = ref(false)
 const tableData = ref([])
 const dialogVisible = ref(false)
-const dialogTitle = ref('新增区域')
+const dialogTitle = ref('新增部门')
 const isEdit = ref(false)
-const areaFormRef = ref(null)
-const departmentList = ref([])
+const departmentFormRef = ref(null)
 
 const searchForm = reactive({
-  areaName: '',
+  departmentName: '',
   status: null
 })
 
@@ -150,52 +131,34 @@ const pagination = reactive({
   total: 0
 })
 
-const areaForm = reactive({
-  areaId: null,
-  areaCode: '',
-  areaName: '',
-  areaSize: null,
+const departmentForm = reactive({
   departmentId: null,
-  location: '',
-  waterQuality: '',
+  departmentCode: '',
+  departmentName: '',
+  description: '',
   status: 1,
   managerId: null
 })
 
-const areaRules = {
-  areaCode: [
-    { required: true, message: '请输入区域编号', trigger: 'blur' }
+const departmentRules = {
+  departmentCode: [
+    { required: true, message: '请输入部门编号', trigger: 'blur' }
   ],
-  areaName: [
-    { required: true, message: '请输入区域名称', trigger: 'blur' }
+  departmentName: [
+    { required: true, message: '请输入部门名称', trigger: 'blur' }
   ],
-  departmentId: [
-    { required: true, message: '请选择所属部门', trigger: 'change' }
-  ],
-  areaSize: [
-    { required: true, message: '请输入面积', trigger: 'blur' }
+  status: [
+    { required: true, message: '请选择状态', trigger: 'change' }
   ]
-}
-
-// 加载部门列表
-const loadDepartmentList = async () => {
-  try {
-    const res = await getAllDepartments()
-    if (res.code === 200) {
-      departmentList.value = res.data || []
-    }
-  } catch (error) {
-    console.error('加载部门列表失败', error)
-  }
 }
 
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await getAreaList({
+    const res = await getDepartmentList({
       current: pagination.current,
       size: pagination.size,
-      areaName: searchForm.areaName || undefined,
+      departmentName: searchForm.departmentName || undefined,
       status: searchForm.status
     })
     if (res.code === 200) {
@@ -215,29 +178,26 @@ const handleSearch = () => {
 }
 
 const handleReset = () => {
-  searchForm.areaName = ''
+  searchForm.departmentName = ''
   searchForm.status = null
   handleSearch()
 }
 
 const handleAdd = () => {
   isEdit.value = false
-  dialogTitle.value = '新增区域'
+  dialogTitle.value = '新增部门'
   dialogVisible.value = true
   resetForm()
 }
 
 const handleEdit = (row) => {
   isEdit.value = true
-  dialogTitle.value = '编辑区域'
-  Object.assign(areaForm, {
-    areaId: row.areaId,
-    areaCode: row.areaCode,
-    areaName: row.areaName,
-    areaSize: row.areaSize,
+  dialogTitle.value = '编辑部门'
+  Object.assign(departmentForm, {
     departmentId: row.departmentId,
-    location: row.location || '',
-    waterQuality: row.waterQuality || '',
+    departmentCode: row.departmentCode,
+    departmentName: row.departmentName,
+    description: row.description || '',
     status: row.status,
     managerId: row.managerId
   })
@@ -246,10 +206,10 @@ const handleEdit = (row) => {
 
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm('确定要删除该区域吗？', '提示', {
+    await ElMessageBox.confirm('确定要删除该部门吗？', '提示', {
       type: 'warning'
     })
-    const res = await deleteArea(row.areaId)
+    const res = await deleteDepartment(row.departmentId)
     if (res.code === 200) {
       ElMessage.success('删除成功')
       loadData()
@@ -262,15 +222,15 @@ const handleDelete = async (row) => {
 }
 
 const handleSubmit = async () => {
-  if (!areaFormRef.value) return
-  await areaFormRef.value.validate(async (valid) => {
+  if (!departmentFormRef.value) return
+  await departmentFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
         let res
         if (isEdit.value) {
-          res = await updateArea(areaForm)
+          res = await updateDepartment(departmentForm)
         } else {
-          res = await saveArea(areaForm)
+          res = await saveDepartment(departmentForm)
         }
         if (res.code === 200) {
           ElMessage.success(isEdit.value ? '更新成功' : '新增成功')
@@ -285,18 +245,15 @@ const handleSubmit = async () => {
 }
 
 const resetForm = () => {
-  Object.assign(areaForm, {
-    areaId: null,
-    areaCode: '',
-    areaName: '',
-    areaSize: null,
+  Object.assign(departmentForm, {
     departmentId: null,
-    location: '',
-    waterQuality: '',
+    departmentCode: '',
+    departmentName: '',
+    description: '',
     status: 1,
     managerId: null
   })
-  areaFormRef.value?.clearValidate()
+  departmentFormRef.value?.clearValidate()
 }
 
 const handleDialogClose = () => {
@@ -313,12 +270,11 @@ const handleCurrentChange = () => {
 
 onMounted(() => {
   loadData()
-  loadDepartmentList()
 })
 </script>
 
 <style scoped>
-.area-list {
+.department-list {
   padding: 0;
 }
 

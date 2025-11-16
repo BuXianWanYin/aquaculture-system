@@ -17,6 +17,7 @@
           <el-select v-model="searchForm.module" placeholder="请选择模块" clearable style="width: 150px;">
             <el-option label="全部" value="" />
             <el-option label="系统管理" value="system" />
+            <el-option label="部门管理" value="department" />
             <el-option label="养殖计划" value="plan" />
             <el-option label="区域管理" value="area" />
             <el-option label="品种管理" value="breed" />
@@ -106,6 +107,7 @@
         <el-form-item label="所属模块" prop="module">
           <el-select v-model="permissionForm.module" placeholder="请选择模块" style="width: 100%;">
             <el-option label="系统管理" value="system" />
+            <el-option label="部门管理" value="department" />
             <el-option label="养殖计划" value="plan" />
             <el-option label="区域管理" value="area" />
             <el-option label="品种管理" value="breed" />

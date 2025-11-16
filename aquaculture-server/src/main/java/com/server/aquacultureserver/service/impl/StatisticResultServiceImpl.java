@@ -3,9 +3,11 @@ package com.server.aquacultureserver.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.aquacultureserver.domain.AquaculturePlan;
+import com.server.aquacultureserver.domain.BaseArea;
 import com.server.aquacultureserver.domain.StatisticResult;
 import com.server.aquacultureserver.domain.YieldStatistics;
 import com.server.aquacultureserver.mapper.AquaculturePlanMapper;
+import com.server.aquacultureserver.mapper.BaseAreaMapper;
 import com.server.aquacultureserver.mapper.StatisticResultMapper;
 import com.server.aquacultureserver.mapper.YieldStatisticsMapper;
 import com.server.aquacultureserver.service.StatisticResultService;
@@ -17,8 +19,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 统计结果服务实现类
@@ -34,6 +38,9 @@ public class StatisticResultServiceImpl implements StatisticResultService {
     
     @Autowired
     private AquaculturePlanMapper planMapper;
+    
+    @Autowired
+    private BaseAreaMapper areaMapper;
     
     @Override
     public Page<StatisticResult> getPage(Integer current, Integer size, 
@@ -110,21 +117,40 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         
         List<YieldStatistics> statistics = yieldStatisticsMapper.selectList(wrapper);
         
-        // 按月份分组统计
-        Map<String, BigDecimal> monthlyData = new HashMap<>();
-        for (YieldStatistics stat : statistics) {
-            if (stat.getStatisticsDate() != null && stat.getActualYield() != null) {
-                String monthKey = stat.getStatisticsDate().toString().substring(0, 7); // YYYY-MM
-                monthlyData.put(monthKey, 
-                    monthlyData.getOrDefault(monthKey, BigDecimal.ZERO).add(stat.getActualYield()));
+        // 查询所有区域，建立区域ID到部门ID的映射
+        List<BaseArea> areas = areaMapper.selectList(null);
+        Map<Long, Long> areaToDepartmentMap = new HashMap<>();
+        for (BaseArea area : areas) {
+            if (area.getDepartmentId() != null) {
+                areaToDepartmentMap.put(area.getAreaId(), area.getDepartmentId());
             }
         }
         
-        // 转换为列表格式
-        for (Map.Entry<String, BigDecimal> entry : monthlyData.entrySet()) {
+        // 按部门和月份分组统计
+        // Map<部门ID, Map<月份, 产量>>
+        Map<Long, Map<String, BigDecimal>> departmentMonthlyData = new HashMap<>();
+        Set<String> allMonths = new HashSet<>();
+        
+        for (YieldStatistics stat : statistics) {
+            if (stat.getStatisticsDate() != null && stat.getActualYield() != null && stat.getAreaId() != null) {
+                Long departmentId = areaToDepartmentMap.get(stat.getAreaId());
+                if (departmentId != null) {
+                    String monthKey = stat.getStatisticsDate().toString().substring(0, 7); // YYYY-MM
+                    allMonths.add(monthKey);
+                    
+                    departmentMonthlyData.putIfAbsent(departmentId, new HashMap<>());
+                    Map<String, BigDecimal> monthlyData = departmentMonthlyData.get(departmentId);
+                    monthlyData.put(monthKey, 
+                        monthlyData.getOrDefault(monthKey, BigDecimal.ZERO).add(stat.getActualYield()));
+                }
+            }
+        }
+        
+        // 转换为列表格式：每个部门一条记录，包含所有月份的数据
+        for (Map.Entry<Long, Map<String, BigDecimal>> deptEntry : departmentMonthlyData.entrySet()) {
             Map<String, Object> item = new HashMap<>();
-            item.put("month", entry.getKey());
-            item.put("yield", entry.getValue());
+            item.put("departmentId", deptEntry.getKey());
+            item.put("monthlyData", deptEntry.getValue());
             result.add(item);
         }
         
@@ -180,6 +206,11 @@ public class StatisticResultServiceImpl implements StatisticResultService {
     public List<Map<String, Object>> getAreaYieldComparison(LocalDate startDate, LocalDate endDate) {
         List<Map<String, Object>> result = new ArrayList<>();
         
+        // 先查询所有区域（只查询启用状态的区域）
+        LambdaQueryWrapper<BaseArea> areaWrapper = new LambdaQueryWrapper<>();
+        areaWrapper.eq(BaseArea::getStatus, 1); // 只查询启用状态的区域
+        List<BaseArea> allAreas = areaMapper.selectList(areaWrapper);
+        
         // 查询产量统计数据
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(YieldStatistics::getStatus, 1); // 已通过审核的产量
@@ -192,7 +223,7 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         
         List<YieldStatistics> statistics = yieldStatisticsMapper.selectList(wrapper);
         
-        // 按区域分组统计
+        // 按区域分组统计产量
         Map<Long, BigDecimal> areaData = new HashMap<>();
         
         for (YieldStatistics stat : statistics) {
@@ -202,11 +233,11 @@ public class StatisticResultServiceImpl implements StatisticResultService {
             }
         }
         
-        // 转换为列表格式
-        for (Map.Entry<Long, BigDecimal> entry : areaData.entrySet()) {
+        // 为所有区域创建数据，没有产量的区域显示为0
+        for (BaseArea area : allAreas) {
             Map<String, Object> item = new HashMap<>();
-            item.put("areaId", entry.getKey());
-            item.put("yield", entry.getValue());
+            item.put("areaId", area.getAreaId());
+            item.put("yield", areaData.getOrDefault(area.getAreaId(), BigDecimal.ZERO));
             result.add(item);
         }
         
@@ -246,6 +277,55 @@ public class StatisticResultServiceImpl implements StatisticResultService {
             result.put("completionRate", (double) completedCount / totalCount * 100);
         } else {
             result.put("completionRate", 0.0);
+        }
+        
+        return result;
+    }
+    
+    @Override
+    public List<Map<String, Object>> getDepartmentYieldComparison(LocalDate startDate, LocalDate endDate) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        // 查询产量统计数据
+        LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(YieldStatistics::getStatus, 1); // 已通过审核的产量
+        if (startDate != null) {
+            wrapper.ge(YieldStatistics::getStatisticsDate, startDate);
+        }
+        if (endDate != null) {
+            wrapper.le(YieldStatistics::getStatisticsDate, endDate);
+        }
+        
+        List<YieldStatistics> statistics = yieldStatisticsMapper.selectList(wrapper);
+        
+        // 查询所有区域，建立区域ID到部门ID的映射
+        List<BaseArea> areas = areaMapper.selectList(null);
+        Map<Long, Long> areaToDepartmentMap = new HashMap<>();
+        for (BaseArea area : areas) {
+            if (area.getDepartmentId() != null) {
+                areaToDepartmentMap.put(area.getAreaId(), area.getDepartmentId());
+            }
+        }
+        
+        // 按部门分组统计产量
+        Map<Long, BigDecimal> departmentData = new HashMap<>();
+        
+        for (YieldStatistics stat : statistics) {
+            if (stat.getAreaId() != null && stat.getActualYield() != null) {
+                Long departmentId = areaToDepartmentMap.get(stat.getAreaId());
+                if (departmentId != null) {
+                    departmentData.put(departmentId, 
+                        departmentData.getOrDefault(departmentId, BigDecimal.ZERO).add(stat.getActualYield()));
+                }
+            }
+        }
+        
+        // 转换为列表格式
+        for (Map.Entry<Long, BigDecimal> entry : departmentData.entrySet()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("departmentId", entry.getKey());
+            item.put("yield", entry.getValue());
+            result.add(item);
         }
         
         return result;

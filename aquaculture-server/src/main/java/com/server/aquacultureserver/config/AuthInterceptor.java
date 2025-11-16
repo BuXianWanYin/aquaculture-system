@@ -3,7 +3,9 @@ package com.server.aquacultureserver.config;
 import com.alibaba.fastjson.JSON;
 import com.server.aquacultureserver.common.Result;
 import com.server.aquacultureserver.domain.SysRole;
+import com.server.aquacultureserver.domain.SysPermission;
 import com.server.aquacultureserver.mapper.SysRoleMapper;
+import com.server.aquacultureserver.service.SysPermissionService;
 import com.server.aquacultureserver.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -12,6 +14,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * JWT权限拦截器
@@ -24,6 +28,9 @@ public class AuthInterceptor implements HandlerInterceptor {
     
     @Autowired
     private SysRoleMapper roleMapper;
+    
+    @Autowired
+    private SysPermissionService permissionService;
     
     // 不需要认证的路径
     private static final String[] WHITE_LIST = {
@@ -75,6 +82,13 @@ public class AuthInterceptor implements HandlerInterceptor {
             SysRole role = roleMapper.selectById(roleId);
             if (role != null) {
                 request.setAttribute("roleName", role.getRoleName());
+                
+                // 查询用户权限列表并设置到request中（用于权限控制）
+                List<SysPermission> permissions = permissionService.getPermissionsByRoleId(roleId);
+                List<String> permissionCodes = permissions.stream()
+                    .map(SysPermission::getPermissionCode)
+                    .collect(Collectors.toList());
+                request.setAttribute("permissions", permissionCodes);
             }
         }
         

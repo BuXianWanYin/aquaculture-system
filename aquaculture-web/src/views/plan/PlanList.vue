@@ -53,6 +53,24 @@
             {{ formatDate(row.startDate) }}
           </template>
         </el-table-column>
+        <el-table-column prop="endDate" label="结束日期" min-width="120">
+          <template #default="{ row }">
+            {{ formatDate(row.endDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="completionRate" label="完成率" min-width="150" sortable="custom" :sort-method="sortByCompletionRate">
+          <template #default="{ row }">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <el-progress 
+                :percentage="row.completionRate || 0" 
+                :color="getProgressColor(row.completionRate || 0)"
+                :stroke-width="8"
+                style="flex: 1;"
+              />
+             
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.status === 0" type="warning">待审批</el-tag>
@@ -241,7 +259,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { getPlanList, savePlan, updatePlan, deletePlan, approvePlan } from '@/api/plan'
+import { getPlanList, savePlan, updatePlan, deletePlan, approvePlan, getPlanCompletionRate } from '@/api/plan'
 import { saveAdjust } from '@/api/planAdjust'
 import { getAllAreas } from '@/api/area'
 import { getAllBreeds } from '@/api/breed'
@@ -352,12 +370,52 @@ const loadData = async () => {
     if (res.code === 200) {
       tableData.value = res.data.records || []
       pagination.total = res.data.total || 0
+      
+      // 加载每个计划的完成率
+      await loadCompletionRates()
     }
   } catch (error) {
     ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
   }
+}
+
+// 加载所有计划的完成率
+const loadCompletionRates = async () => {
+  const promises = tableData.value.map(async (row) => {
+    try {
+      const res = await getPlanCompletionRate(row.planId)
+      if (res.code === 200) {
+        row.completionRate = res.data || 0
+      } else {
+        row.completionRate = 0
+      }
+    } catch (error) {
+      row.completionRate = 0
+    }
+  })
+  await Promise.all(promises)
+}
+
+// 获取进度条颜色
+const getProgressColor = (percentage) => {
+  if (percentage >= 100) {
+    return '#67c23a' // 绿色 - 已完成
+  } else if (percentage >= 80) {
+    return '#409eff' // 蓝色 - 接近完成
+  } else if (percentage >= 50) {
+    return '#e6a23c' // 橙色 - 进行中
+  } else {
+    return '#f56c6c' // 红色 - 进度较慢
+  }
+}
+
+// 按完成率排序
+const sortByCompletionRate = (a, b) => {
+  const rateA = a.completionRate || 0
+  const rateB = b.completionRate || 0
+  return rateA - rateB
 }
 
 const handleSearch = () => {
