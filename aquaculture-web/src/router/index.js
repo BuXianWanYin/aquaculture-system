@@ -34,6 +34,12 @@ const routes = [
         meta: { title: '角色管理', roles: [1] }
       },
       {
+        path: 'permission',
+        name: 'Permission',
+        component: () => import('@/views/permission/PermissionList.vue'),
+        meta: { title: '权限管理', roles: [1] }
+      },
+      {
         path: 'breed',
         name: 'Breed',
         component: () => import('@/views/breed/BreedList.vue'),
@@ -74,6 +80,12 @@ const routes = [
         name: 'Statistic',
         component: () => import('@/views/statistic/StatisticList.vue'),
         meta: { title: '数据报表与分析', roles: [1, 2, 4] }
+      },
+      {
+        path: 'message',
+        name: 'Message',
+        component: () => import('@/views/message/MessageList.vue'),
+        meta: { title: '消息通知', roles: [1, 2, 3, 4] }
       }
     ]
   }

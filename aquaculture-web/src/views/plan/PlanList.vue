@@ -35,8 +35,16 @@
       <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
         <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="planName" label="计划名称" min-width="180" />
-        <el-table-column prop="areaId" label="区域ID" width="100" />
-        <el-table-column prop="breedId" label="品种ID" width="100" />
+        <el-table-column prop="areaId" label="所属区域" min-width="120">
+          <template #default="{ row }">
+            {{ getAreaName(row.areaId) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="breedId" label="养殖品种" min-width="120">
+          <template #default="{ row }">
+            {{ getBreedName(row.breedId) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="targetYield" label="目标产量(kg)" min-width="120" />
         <el-table-column prop="releaseAmount" label="投放量(kg)" min-width="120" />
         <el-table-column prop="cycleDays" label="周期(天)" width="100" />
@@ -101,13 +109,27 @@
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="区域ID" prop="areaId">
-              <el-input-number v-model="planForm.areaId" :min="1" style="width: 100%;" />
+            <el-form-item label="所属区域" prop="areaId">
+              <el-select v-model="planForm.areaId" placeholder="请选择区域" style="width: 100%;" filterable>
+                <el-option 
+                  v-for="area in areaList" 
+                  :key="area.areaId" 
+                  :label="area.areaName" 
+                  :value="area.areaId" 
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="品种ID" prop="breedId">
-              <el-input-number v-model="planForm.breedId" :min="1" style="width: 100%;" />
+            <el-form-item label="养殖品种" prop="breedId">
+              <el-select v-model="planForm.breedId" placeholder="请选择品种" style="width: 100%;" filterable>
+                <el-option 
+                  v-for="breed in breedList" 
+                  :key="breed.breedId" 
+                  :label="breed.breedName" 
+                  :value="breed.breedId" 
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -218,8 +240,11 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { getPlanList, savePlan, updatePlan, deletePlan, approvePlan } from '@/api/plan'
 import { saveAdjust } from '@/api/planAdjust'
+import { getAllAreas } from '@/api/area'
+import { getAllBreeds } from '@/api/breed'
 import { useUserStore } from '@/stores/user'
 import { formatDateTime, formatDate } from '@/utils/date'
 
@@ -234,6 +259,8 @@ const planFormRef = ref(null)
 const adjustFormRef = ref(null)
 const userStore = useUserStore()
 const currentPlan = ref({})
+const areaList = ref([])
+const breedList = ref([])
 
 const searchForm = reactive({
   planName: '',
@@ -282,10 +309,10 @@ const planRules = {
     { required: true, message: '请输入计划名称', trigger: 'blur' }
   ],
   areaId: [
-    { required: true, message: '请输入区域ID', trigger: 'blur' }
+    { required: true, message: '请选择所属区域', trigger: 'change' }
   ],
   breedId: [
-    { required: true, message: '请输入品种ID', trigger: 'blur' }
+    { required: true, message: '请选择养殖品种', trigger: 'change' }
   ],
   targetYield: [
     { required: true, message: '请输入目标产量', trigger: 'blur' }
@@ -490,8 +517,48 @@ const handleCurrentChange = () => {
   loadData()
 }
 
+// 加载区域列表
+const loadAreaList = async () => {
+  try {
+    const res = await getAllAreas()
+    if (res.code === 200) {
+      areaList.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载区域列表失败', error)
+  }
+}
+
+// 加载品种列表
+const loadBreedList = async () => {
+  try {
+    const res = await getAllBreeds()
+    if (res.code === 200) {
+      breedList.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载品种列表失败', error)
+  }
+}
+
+// 根据ID获取区域名称
+const getAreaName = (areaId) => {
+  if (!areaId) return '-'
+  const area = areaList.value.find(a => a.areaId === areaId)
+  return area ? area.areaName : `区域${areaId}`
+}
+
+// 根据ID获取品种名称
+const getBreedName = (breedId) => {
+  if (!breedId) return '-'
+  const breed = breedList.value.find(b => b.breedId === breedId)
+  return breed ? breed.breedName : `品种${breedId}`
+}
+
 onMounted(() => {
   loadData()
+  loadAreaList()
+  loadBreedList()
 })
 </script>
 

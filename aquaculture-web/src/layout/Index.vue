@@ -16,32 +16,36 @@
           <el-icon><House /></el-icon>
           <span>首页</span>
         </el-menu-item>
-        <el-menu-item index="/user" v-if="canAccess([1, 2])">
-          <el-icon><User /></el-icon>
-          <span>用户管理</span>
-        </el-menu-item>
-        <el-menu-item index="/role" v-if="canAccess([1])">
-          <el-icon><UserFilled /></el-icon>
-          <span>角色管理</span>
-        </el-menu-item>
-        <el-sub-menu index="base" v-if="canAccess([1, 2, 3])">
+        <el-sub-menu index="user" v-if="canAccess([1, 2])">
           <template #title>
-            <el-icon><Setting /></el-icon>
-            <span>基础数据管理</span>
+            <el-icon><User /></el-icon>
+            <span>用户与权限管理</span>
           </template>
-          <el-menu-item index="/breed">
-            <el-icon><Collection /></el-icon>
-            <span>养殖品种</span>
+          <el-menu-item index="/user" v-if="canAccess([1, 2])">
+            <el-icon><User /></el-icon>
+            <span>用户管理</span>
           </el-menu-item>
-          <el-menu-item index="/area">
-            <el-icon><MapLocation /></el-icon>
-            <span>养殖区域</span>
+          <el-menu-item index="/role" v-if="canAccess([1])">
+            <el-icon><UserFilled /></el-icon>
+            <span>角色管理</span>
           </el-menu-item>
-          <el-menu-item index="/equipment">
-            <el-icon><Tools /></el-icon>
-            <span>设备管理</span>
+          <el-menu-item index="/permission" v-if="canAccess([1])">
+            <el-icon><Key /></el-icon>
+            <span>权限管理</span>
           </el-menu-item>
         </el-sub-menu>
+        <el-menu-item index="/breed" v-if="canAccess([1, 2, 3])">
+          <el-icon><Collection /></el-icon>
+          <span>养殖品种</span>
+        </el-menu-item>
+        <el-menu-item index="/area" v-if="canAccess([1, 2, 3])">
+          <el-icon><MapLocation /></el-icon>
+          <span>养殖区域</span>
+        </el-menu-item>
+        <el-menu-item index="/equipment" v-if="canAccess([1, 2, 3])">
+          <el-icon><Tools /></el-icon>
+          <span>设备管理</span>
+        </el-menu-item>
         <el-menu-item index="/plan" v-if="canAccess([1, 2, 3, 4])">
           <el-icon><Document /></el-icon>
           <span>养殖计划管理</span>
@@ -57,6 +61,10 @@
         <el-menu-item index="/statistic" v-if="canAccess([1, 2, 4])">
           <el-icon><DataAnalysis /></el-icon>
           <span>数据报表与分析</span>
+        </el-menu-item>
+        <el-menu-item index="/message" v-if="canAccess([1, 2, 3, 4])">
+          <el-icon><Bell /></el-icon>
+          <span>消息通知</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -99,14 +107,15 @@ import {
   House,
   User,
   UserFilled,
-  Setting,
   Collection,
   MapLocation,
   Tools,
   Avatar,
   ArrowDown,
   Document,
-  DataAnalysis
+  DataAnalysis,
+  Key,
+  Bell
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

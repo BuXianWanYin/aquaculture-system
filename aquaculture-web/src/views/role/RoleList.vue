@@ -39,9 +39,10 @@
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button type="warning" link size="small" @click="handleAssignPermission(row)">分配权限</el-button>
             <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -92,13 +93,37 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+    
+    <!-- 权限分配对话框 -->
+    <el-dialog
+      v-model="permissionDialogVisible"
+      :title="`为角色「${currentRole?.roleName}」分配权限`"
+      width="600px"
+      @close="handlePermissionDialogClose"
+    >
+      <el-tree
+        ref="permissionTreeRef"
+        :data="permissionTreeData"
+        :props="{ children: 'children', label: 'permissionName' }"
+        show-checkbox
+        node-key="permissionId"
+        :default-expand-all="true"
+        @check="handlePermissionCheck"
+      />
+      <template #footer>
+        <el-button @click="permissionDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handlePermissionSubmit">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { getRoleList, saveRole, updateRole, deleteRole } from '@/api/role'
+import { getAllPermissions, getPermissionsByRoleId, assignPermissionsToRole } from '@/api/permission'
 import { formatDateTime } from '@/utils/date'
 
 const loading = ref(false)
@@ -107,6 +132,11 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('新增角色')
 const isEdit = ref(false)
 const roleFormRef = ref(null)
+const permissionDialogVisible = ref(false)
+const permissionTreeRef = ref(null)
+const currentRole = ref(null)
+const permissionTreeData = ref([])
+const checkedPermissionIds = ref([])
 
 const searchForm = reactive({
   roleName: ''
@@ -249,6 +279,93 @@ const handleSizeChange = () => {
 
 const handleCurrentChange = () => {
   loadData()
+}
+
+// 构建权限树形结构
+const buildPermissionTree = (permissions) => {
+  const tree = []
+  const map = {}
+  
+  // 创建映射
+  permissions.forEach(permission => {
+    map[permission.permissionId] = { ...permission, children: [] }
+  })
+  
+  // 构建树
+  permissions.forEach(permission => {
+    const node = map[permission.permissionId]
+    if (permission.parentId && permission.parentId !== 0 && map[permission.parentId]) {
+      map[permission.parentId].children.push(node)
+    } else {
+      tree.push(node)
+    }
+  })
+  
+  return tree
+}
+
+// 分配权限
+const handleAssignPermission = async (row) => {
+  currentRole.value = row
+  permissionDialogVisible.value = true
+  
+  try {
+    // 加载所有权限
+    const allRes = await getAllPermissions()
+    if (allRes.code === 200) {
+      permissionTreeData.value = buildPermissionTree(allRes.data || [])
+    }
+    
+    // 加载角色已分配的权限
+    const roleRes = await getPermissionsByRoleId(row.roleId)
+    if (roleRes.code === 200) {
+      checkedPermissionIds.value = (roleRes.data || []).map(p => p.permissionId)
+      
+      // 等待DOM更新后设置选中状态，这样会自动触发父子级联
+      await nextTick()
+      if (permissionTreeRef.value && checkedPermissionIds.value.length > 0) {
+        permissionTreeRef.value.setCheckedKeys(checkedPermissionIds.value)
+      }
+    }
+  } catch (error) {
+    ElMessage.error('加载权限数据失败')
+  }
+}
+
+// 处理权限树节点选中事件
+const handlePermissionCheck = (data, checkedInfo) => {
+  // 当父节点被选中时，el-tree会自动处理子节点的选中
+  // 这里可以添加额外的逻辑，比如记录操作日志等
+  // 由于移除了check-strictly，父子节点会自动关联
+}
+
+// 提交权限分配
+const handlePermissionSubmit = async () => {
+  if (!permissionTreeRef.value) return
+  
+  // 获取所有选中的节点（包括父节点和子节点）
+  const checkedKeys = permissionTreeRef.value.getCheckedKeys()
+  // 获取半选中的节点（父节点被部分选中时）
+  const halfCheckedKeys = permissionTreeRef.value.getHalfCheckedKeys()
+  // 合并所有选中的权限ID
+  const allCheckedKeys = [...checkedKeys, ...halfCheckedKeys]
+  
+  try {
+    const res = await assignPermissionsToRole(currentRole.value.roleId, allCheckedKeys)
+    if (res.code === 200) {
+      ElMessage.success('权限分配成功')
+      permissionDialogVisible.value = false
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '权限分配失败')
+  }
+}
+
+// 关闭权限分配对话框
+const handlePermissionDialogClose = () => {
+  currentRole.value = null
+  permissionTreeData.value = []
+  checkedPermissionIds.value = []
 }
 
 onMounted(() => {

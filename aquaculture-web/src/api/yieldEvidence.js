@@ -44,7 +44,7 @@ export const deleteEvidence = (evidenceId) => {
  */
 export const uploadEvidence = (formData) => {
   return request({
-    url: '/yieldEvidence/upload',
+    url: '/upload/yieldEvidence',
     method: 'post',
     data: formData,
     headers: {

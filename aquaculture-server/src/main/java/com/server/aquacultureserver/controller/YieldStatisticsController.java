@@ -60,10 +60,15 @@ public class YieldStatisticsController {
      */
     @PostMapping
     @RequiresRole({1, 2, 3}) // 系统管理员、部门管理员、普通操作员
-    public Result<Boolean> saveStatistics(@RequestBody YieldStatistics statistics) {
+    public Result<YieldStatistics> saveStatistics(@RequestBody YieldStatistics statistics) {
         try {
             boolean success = statisticsService.saveStatistics(statistics);
-            return Result.success("新增成功", success);
+            if (success) {
+                // 返回保存后的对象（包含自动生成的yieldId）
+                return Result.success("新增成功", statistics);
+            } else {
+                return Result.error("新增失败");
+            }
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

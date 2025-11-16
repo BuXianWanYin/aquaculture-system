@@ -94,8 +94,15 @@
             <el-option label="其他" value="其他" />
           </el-select>
         </el-form-item>
-        <el-form-item label="区域ID" prop="areaId">
-          <el-input-number v-model="equipmentForm.areaId" :min="1" style="width: 100%;" />
+        <el-form-item label="所属区域" prop="areaId">
+          <el-select v-model="equipmentForm.areaId" placeholder="请选择区域" style="width: 100%;" filterable>
+            <el-option 
+              v-for="area in areaList" 
+              :key="area.areaId" 
+              :label="area.areaName" 
+              :value="area.areaId" 
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="安装位置">
           <el-input v-model="equipmentForm.installLocation" />
@@ -125,7 +132,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { getEquipmentList, saveEquipment, updateEquipment, deleteEquipment } from '@/api/equipment'
+import { getAllAreas } from '@/api/area'
 import { formatDateTime } from '@/utils/date'
 
 const loading = ref(false)
@@ -134,6 +143,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('新增设备')
 const isEdit = ref(false)
 const equipmentFormRef = ref(null)
+const areaList = ref([])
 
 const searchForm = reactive({
   equipmentName: '',
@@ -167,7 +177,7 @@ const equipmentRules = {
     { required: true, message: '请选择设备类型', trigger: 'change' }
   ],
   areaId: [
-    { required: true, message: '请输入区域ID', trigger: 'blur' }
+    { required: true, message: '请选择所属区域', trigger: 'change' }
   ],
   quantity: [
     { required: true, message: '请输入数量', trigger: 'blur' }
@@ -298,8 +308,21 @@ const handleCurrentChange = () => {
   loadData()
 }
 
+// 加载区域列表
+const loadAreaList = async () => {
+  try {
+    const res = await getAllAreas()
+    if (res.code === 200) {
+      areaList.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载区域列表失败', error)
+  }
+}
+
 onMounted(() => {
   loadData()
+  loadAreaList()
 })
 </script>
 

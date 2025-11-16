@@ -41,6 +41,11 @@ public class OperLogAspect {
             return joinPoint.proceed();
         }
         
+        // 不记录查看操作（GET请求）
+        if ("GET".equals(method)) {
+            return joinPoint.proceed();
+        }
+        
         // 从request中获取用户信息（由拦截器设置）
         Object userIdObj = request.getAttribute("userId");
         Long userId = userIdObj != null ? Long.valueOf(userIdObj.toString()) : null;
