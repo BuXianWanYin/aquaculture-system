@@ -35,16 +35,7 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
                 return Collections.emptyList();
             }
         }
-        // 部门管理员可以查看其部门下所有用户创建的采购记录
-        else if (UserContext.isDepartmentManager()) {
-            List<Long> userIds = UserContext.getDepartmentManagerUserIds();
-            if (userIds != null && !userIds.isEmpty()) {
-                wrapper.in(FeedPurchase::getCreatorId, userIds);
-            } else {
-                return Collections.emptyList();
-            }
-        }
-        
+
         wrapper.eq(FeedPurchase::getStatus, 1);
         wrapper.orderByDesc(FeedPurchase::getCreateTime);
         return purchaseMapper.selectList(wrapper);
@@ -69,15 +60,7 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
                 return page;
             }
         }
-        // 部门管理员可以查看其部门下所有用户创建的采购记录
-        else if (UserContext.isDepartmentManager()) {
-            List<Long> userIds = UserContext.getDepartmentManagerUserIds();
-            if (userIds != null && !userIds.isEmpty()) {
-                wrapper.in(FeedPurchase::getCreatorId, userIds);
-            } else {
-                return page;
-            }
-        }
+
         
         if (feedName != null && !feedName.isEmpty()) {
             wrapper.like(FeedPurchase::getFeedName, feedName);

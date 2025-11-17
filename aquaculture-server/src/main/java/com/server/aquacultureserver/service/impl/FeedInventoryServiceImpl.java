@@ -35,15 +35,6 @@ public class FeedInventoryServiceImpl implements FeedInventoryService {
                 return Collections.emptyList();
             }
         }
-        // 部门管理员可以查看其部门下所有用户创建的库存记录
-        else if (UserContext.isDepartmentManager()) {
-            List<Long> userIds = UserContext.getDepartmentManagerUserIds();
-            if (userIds != null && !userIds.isEmpty()) {
-                wrapper.in(FeedInventory::getCreatorId, userIds);
-            } else {
-                return Collections.emptyList();
-            }
-        }
         
         wrapper.eq(FeedInventory::getStatus, 1);
         wrapper.orderByDesc(FeedInventory::getCreateTime);
@@ -65,15 +56,6 @@ public class FeedInventoryServiceImpl implements FeedInventoryService {
             Long userId = UserContext.getCurrentUserId();
             if (userId != null) {
                 wrapper.eq(FeedInventory::getCreatorId, userId);
-            } else {
-                return page;
-            }
-        }
-        // 部门管理员可以查看其部门下所有用户创建的库存记录
-        else if (UserContext.isDepartmentManager()) {
-            List<Long> userIds = UserContext.getDepartmentManagerUserIds();
-            if (userIds != null && !userIds.isEmpty()) {
-                wrapper.in(FeedInventory::getCreatorId, userIds);
             } else {
                 return page;
             }

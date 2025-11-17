@@ -34,6 +34,15 @@ public class BaseEquipmentServiceImpl implements BaseEquipmentService {
                 return Collections.emptyList();
             }
         }
+        // 部门管理员只能查看其部门下所有区域的设备
+        else if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                wrapper.in(BaseEquipment::getAreaId, areaIds);
+            } else {
+                return Collections.emptyList();
+            }
+        }
         
         wrapper.orderByDesc(BaseEquipment::getCreateTime);
         return equipmentMapper.selectList(wrapper);
@@ -54,6 +63,15 @@ public class BaseEquipmentServiceImpl implements BaseEquipmentService {
             Long userAreaId = UserContext.getCurrentUserAreaId();
             if (userAreaId != null) {
                 wrapper.eq(BaseEquipment::getAreaId, userAreaId);
+            } else {
+                return page; // 返回空结果
+            }
+        }
+        // 部门管理员只能查看其部门下所有区域的设备
+        else if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                wrapper.in(BaseEquipment::getAreaId, areaIds);
             } else {
                 return page; // 返回空结果
             }
@@ -84,6 +102,16 @@ public class BaseEquipmentServiceImpl implements BaseEquipmentService {
             // 强制设置为当前用户的区域
             equipment.setAreaId(userAreaId);
         }
+        // 部门管理员只能为其部门下区域新增设备
+        else if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds == null || areaIds.isEmpty()) {
+                throw new RuntimeException("您尚未分配部门，无法新增设备");
+            }
+            if (equipment.getAreaId() == null || !areaIds.contains(equipment.getAreaId())) {
+                throw new RuntimeException("您只能为本部门下区域新增设备");
+            }
+        }
         return equipmentMapper.insert(equipment) > 0;
     }
     
@@ -102,6 +130,21 @@ public class BaseEquipmentServiceImpl implements BaseEquipmentService {
             // 强制设置为当前用户的区域
             equipment.setAreaId(userAreaId);
         }
+        // 部门管理员只能修改其部门下区域的设备
+        else if (UserContext.isDepartmentManager()) {
+            BaseEquipment existing = getById(equipment.getEquipmentId());
+            if (existing == null) {
+                throw new RuntimeException("设备不存在");
+            }
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds == null || areaIds.isEmpty() || !areaIds.contains(existing.getAreaId())) {
+                throw new RuntimeException("您只能修改本部门下区域的设备");
+            }
+            // 确保修改后的区域也在部门范围内
+            if (equipment.getAreaId() != null && !areaIds.contains(equipment.getAreaId())) {
+                throw new RuntimeException("您只能将设备分配给本部门下的区域");
+            }
+        }
         return equipmentMapper.updateById(equipment) > 0;
     }
     
@@ -116,6 +159,17 @@ public class BaseEquipmentServiceImpl implements BaseEquipmentService {
             Long userAreaId = UserContext.getCurrentUserAreaId();
             if (userAreaId == null || !userAreaId.equals(equipment.getAreaId())) {
                 throw new RuntimeException("您只能删除自己区域的设备");
+            }
+        }
+        // 部门管理员只能删除其部门下区域的设备
+        else if (UserContext.isDepartmentManager()) {
+            BaseEquipment equipment = getById(equipmentId);
+            if (equipment == null) {
+                throw new RuntimeException("设备不存在");
+            }
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds == null || areaIds.isEmpty() || !areaIds.contains(equipment.getAreaId())) {
+                throw new RuntimeException("您只能删除本部门下区域的设备");
             }
         }
         return equipmentMapper.deleteById(equipmentId) > 0;

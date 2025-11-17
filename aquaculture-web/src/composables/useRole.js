@@ -37,24 +37,34 @@ export function useRole() {
     return role?.roleName === '决策层' || role?.roleName === '决策者'
   })
   
-  // 判断是否为管理员（已删除部门管理员角色，只保留管理员）
+  // 判断是否为部门管理员
+  const isDepartmentManager = computed(() => {
+    const role = currentRole.value
+    return role?.roleName === '部门管理员'
+  })
+  
+  // 判断是否为管理员
   const isAdminOrManager = computed(() => {
-    return isAdmin.value
+    return isAdmin.value || isDepartmentManager.value
   })
   
-  // 判断是否具有编辑权限（仅管理员）
+  // 注意：以下方法已废弃，请使用 usePermission() 中的权限判断方法
+  // 判断是否具有编辑权限（基于权限代码）
   const canEdit = computed(() => {
-    return isAdmin.value
+    // 此方法已废弃，请使用 usePermission().canEdit
+    return false
   })
   
-  // 判断是否具有删除权限（仅管理员）
+  // 判断是否具有删除权限（基于权限代码）
   const canDelete = computed(() => {
-    return isAdmin.value
+    // 此方法已废弃，请使用 usePermission().canDelete
+    return false
   })
   
-  // 判断是否具有审核权限（仅管理员）
+  // 判断是否具有审核权限（基于权限代码）
   const canAudit = computed(() => {
-    return isAdmin.value
+    // 此方法已废弃，请使用 usePermission().canAudit
+    return false
   })
   
   return {
@@ -62,6 +72,7 @@ export function useRole() {
     isAdmin,
     isOperator,
     isDecisionMaker,
+    isDepartmentManager,
     isAdminOrManager,
     canEdit,
     canDelete,

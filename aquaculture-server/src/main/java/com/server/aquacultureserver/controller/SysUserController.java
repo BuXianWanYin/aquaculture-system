@@ -49,6 +49,12 @@ public class SysUserController {
     @Autowired
     private BaseAreaService areaService;
     
+    @Autowired
+    private com.server.aquacultureserver.service.BaseDepartmentService departmentService;
+    
+    @Autowired
+    private com.server.aquacultureserver.mapper.SysUserMapper userMapper;
+    
     /**
      * 用户登录
      */
@@ -230,13 +236,29 @@ public class SysUserController {
     
     /**
      * 修改密码
+     * 如果oldPassword为空，则不需要原密码验证（仅限修改自己的密码）
      */
     @PostMapping("/changePassword")
     public Result<Boolean> changePassword(
             @RequestParam Long userId,
-            @RequestParam String oldPassword,
-            @RequestParam String newPassword) {
+            @RequestParam(required = false) String oldPassword,
+            @RequestParam String newPassword,
+            HttpServletRequest request) {
         try {
+            // 如果原密码为空，则验证用户只能修改自己的密码
+            if (oldPassword == null || oldPassword.trim().isEmpty()) {
+                Object userIdObj = request.getAttribute("userId");
+                if (userIdObj == null) {
+                    return Result.error("未获取到用户信息");
+                }
+                Long currentUserId = Long.valueOf(userIdObj.toString());
+                
+                // 只能修改自己的密码
+                if (!currentUserId.equals(userId)) {
+                    return Result.error("只能修改自己的密码");
+                }
+            }
+            
             boolean success = userService.changePassword(userId, oldPassword, newPassword);
             return Result.success("密码修改成功", success);
         } catch (Exception e) {
@@ -266,31 +288,70 @@ public class SysUserController {
     @PostMapping("/register")
     public Result<Boolean> register(@RequestBody SysUser user) {
         try {
-            // 注册时只能选择普通操作员或决策层角色
+            // 注册时只能选择普通操作员（roleId=3）或部门管理员（roleId=5）
             if (user.getRoleId() == null) {
                 return Result.error("请选择角色");
             }
-            if (user.getRoleId() == 1 || user.getRoleId() == 2) {
-                return Result.error("不允许注册管理员角色");
+            if (user.getRoleId() == 1 || user.getRoleId() == 2 || user.getRoleId() == 4) {
+                return Result.error("不允许注册系统管理员、决策层或其他角色，只能选择普通操作员或部门管理员");
+            }
+            if (user.getRoleId() != 3 && user.getRoleId() != 5) {
+                return Result.error("只能选择普通操作员或部门管理员角色");
             }
             
-            // 注册时不设置部门，由管理员审核时分配
-            user.setFarmId(null);
+            // 根据角色验证必填字段
+            if (user.getRoleId() == 5L) {
+                // 部门管理员必须选择部门
+                if (user.getDepartmentId() == null) {
+                    return Result.error("部门管理员必须选择所属部门");
+                }
+            } else if (user.getRoleId() == 3L) {
+                // 操作员必须选择部门（用于后续分配区域时确定部门）
+                if (user.getDepartmentId() == null) {
+                    return Result.error("操作员必须选择所属部门");
+                }
+            }
+            
+            // 注册时不设置区域，由管理员审核时分配
+            user.setAreaId(null);
             // status会在saveUser中设置为2（待审核）
             
             boolean success = userService.saveUser(user);
             
             if (success) {
-                // 发送消息通知给所有管理员
-                List<Long> adminUserIds = userService.getAllAdminUserIds();
-                String roleName = user.getRoleId() == 3 ? "普通操作员" : "决策层";
+                // 发送消息通知
+                // 如果是操作员，通知该部门的部门管理员和系统管理员
+                // 如果是部门管理员，只通知系统管理员
+                String roleName = user.getRoleId() == 3 ? "普通操作员" : "部门管理员";
                 
                 // 获取注册的用户ID（插入后自动生成）
                 SysUser registeredUser = userService.getByUsername(user.getUsername());
                 
-                for (Long adminId : adminUserIds) {
+                // 发送消息通知
+                // 如果是操作员（roleId=3），通知该部门的部门管理员和系统管理员
+                // 如果是部门管理员（roleId=5），只通知系统管理员
+                
+                // 通知系统管理员
+                List<Long> adminUserIds = userService.getAllAdminUserIds();
+                
+                // 如果是操作员，还需要通知该部门的部门管理员
+                java.util.Set<Long> notifyUserIds = new java.util.HashSet<>(adminUserIds);
+                if (user.getRoleId() == 3L && user.getDepartmentId() != null) {
+                    // 查询该部门下的部门管理员（roleId=5）
+                    List<SysUser> deptManagers = userMapper.selectList(
+                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser>()
+                            .eq(SysUser::getRoleId, 5L) // 部门管理员
+                            .eq(SysUser::getDepartmentId, user.getDepartmentId())
+                            .eq(SysUser::getStatus, 1) // 已启用
+                    );
+                    for (SysUser deptManager : deptManagers) {
+                        notifyUserIds.add(deptManager.getUserId());
+                    }
+                }
+                
+                for (Long notifyUserId : notifyUserIds) {
                     SysMessage message = new SysMessage();
-                    message.setReceiverId(adminId);
+                    message.setReceiverId(notifyUserId);
                     message.setSenderId(0L); // 0表示系统
                     message.setMessageTitle("新用户注册待审核");
                     message.setMessageContent(String.format("用户【%s】（%s）已注册，等待审核。用户名：%s，真实姓名：%s，联系方式：%s", 
@@ -339,16 +400,8 @@ public class SysUserController {
             
             // 只允许修改：真实姓名、所属养殖区域、联系方式、家庭地址、头像
             existingUser.setRealName(user.getRealName());
-            // 支持areaId（优先）和farmId（兼容旧数据）
-            if (user.getAreaId() != null) {
-                existingUser.setAreaId(user.getAreaId());
-            } else if (user.getFarmId() != null) {
-                // 兼容：如果没有areaId但有farmId，将farmId作为areaId使用
-                existingUser.setAreaId(user.getFarmId());
-            } else {
-                // 如果传入了null，清空区域
-                existingUser.setAreaId(null);
-            }
+            // 设置区域ID
+            existingUser.setAreaId(user.getAreaId());
             existingUser.setPhone(user.getPhone());
             existingUser.setAddress(user.getAddress());
             if (user.getAvatar() != null) {
@@ -392,8 +445,9 @@ public class SysUserController {
                 .collect(java.util.stream.Collectors.toList());
             userDTO.setPermissions(permissionCodes);
             
-            // 设置区域ID（兼容farmId）
-            userDTO.setAreaId(user.getAreaId() != null ? user.getAreaId() : user.getFarmId());
+            // 设置区域ID和部门ID
+            userDTO.setAreaId(user.getAreaId());
+            userDTO.setDepartmentId(user.getDepartmentId());
             
             return Result.success(userDTO);
         } catch (Exception e) {
@@ -409,27 +463,61 @@ public class SysUserController {
     public Result<Boolean> approveUser(
             @RequestParam Long userId,
             @RequestParam Integer status, // 1-通过，0-拒绝
-            @RequestParam(required = false) Long farmId, // 兼容旧参数名，实际是areaId
-            @RequestParam(required = false) Long areaId, // 新参数名
+            @RequestParam(required = false) Long departmentId, // 部门ID（部门管理员使用）
+            @RequestParam(required = false) Long areaId, // 区域ID（操作员使用）
             @RequestParam(required = false) String remark,
             HttpServletRequest request) {
         try {
             Object currentUserIdObj = request.getAttribute("userId");
             Long currentUserId = currentUserIdObj != null ? Long.valueOf(currentUserIdObj.toString()) : null;
             
-            // 优先使用areaId，如果没有则使用farmId（兼容）
-            Long finalAreaId = areaId != null ? areaId : farmId;
-            
-            boolean success = userService.approveUser(userId, status, finalAreaId, remark);
+            // 参数顺序：userId, status, departmentId, areaId, remark
+            boolean success = userService.approveUser(userId, status, departmentId, areaId, remark);
             
             if (success) {
-                // 获取区域名称（如果有分配区域）
-                String areaName = null;
-                if (finalAreaId != null) {
-                    com.server.aquacultureserver.domain.BaseArea area = areaService.getById(finalAreaId);
-                    if (area != null) {
-                        areaName = area.getAreaName();
+                // 获取被审核用户信息
+                SysUser approvedUser = userService.getById(userId);
+                String notifyContent = "";
+                
+                if (status == 1) {
+                    // 审核通过
+                    if (approvedUser != null && approvedUser.getRoleId() != null) {
+                        if (approvedUser.getRoleId() == 5L) {
+                            // 部门管理员：显示部门信息
+                            if (departmentId != null) {
+                                com.server.aquacultureserver.domain.BaseDepartment dept = departmentService.getById(departmentId);
+                                if (dept != null) {
+                                    notifyContent = String.format("您的账号已通过审核，已分配部门：%s。", dept.getDepartmentName());
+                                } else {
+                                    notifyContent = "您的账号已通过审核，可以正常登录使用。";
+                                }
+                            } else {
+                                notifyContent = "您的账号已通过审核，可以正常登录使用。";
+                            }
+                        } else if (approvedUser.getRoleId() == 3L) {
+                            // 操作员：显示区域信息
+                            if (areaId != null) {
+                                com.server.aquacultureserver.domain.BaseArea area = areaService.getById(areaId);
+                                if (area != null) {
+                                    notifyContent = String.format("您的账号已通过审核，已分配区域：%s。", area.getAreaName());
+                                } else {
+                                    notifyContent = "您的账号已通过审核，可以正常登录使用。";
+                                }
+                            } else {
+                                notifyContent = "您的账号已通过审核，可以正常登录使用。";
+                            }
+                        } else {
+                            notifyContent = "您的账号已通过审核，可以正常登录使用。";
+                        }
                     }
+                    
+                    if (remark != null && !remark.isEmpty()) {
+                        notifyContent += "备注：" + remark;
+                    }
+                } else {
+                    // 审核拒绝
+                    notifyContent = String.format("很抱歉，您的账号审核未通过。%s", 
+                        remark != null && !remark.isEmpty() ? "原因：" + remark : "");
                 }
                 
                 // 发送消息通知给被审核的用户
@@ -437,12 +525,7 @@ public class SysUserController {
                 message.setReceiverId(userId);
                 message.setSenderId(currentUserId != null ? currentUserId : 1L);
                 message.setMessageTitle(status == 1 ? "账号审核通过" : "账号审核未通过");
-                message.setMessageContent(status == 1 
-                    ? String.format("您的账号已通过审核，可以正常登录使用。%s%s", 
-                        areaName != null ? "已分配区域：" + areaName + "。" : "",
-                        remark != null && !remark.isEmpty() ? "备注：" + remark : "")
-                    : String.format("很抱歉，您的账号审核未通过。%s", 
-                        remark != null && !remark.isEmpty() ? "原因：" + remark : ""));
+                message.setMessageContent(notifyContent);
                 message.setMessageType("通知");
                 message.setBusinessType("user");
                 message.setBusinessId(userId);

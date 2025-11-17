@@ -54,7 +54,7 @@ public class SysOperLogController {
      * 删除操作日志
      */
     @DeleteMapping("/{logId}")
-    @RequiresPermission({"log:list"}) // 需要日志列表查看权限（删除日志需要列表权限）
+    @RequiresPermission({"log:delete"}) // 需要日志删除权限
     public Result<Boolean> deleteLog(@PathVariable Long logId) {
         try {
             boolean success = operLogService.deleteLog(logId);
@@ -68,7 +68,7 @@ public class SysOperLogController {
      * 批量删除操作日志
      */
     @DeleteMapping("/batch")
-    @RequiresPermission({"log:list"}) // 需要日志列表查看权限
+    @RequiresPermission({"log:delete"}) // 需要日志删除权限
     public Result<Boolean> deleteBatch(@RequestBody Long[] logIds) {
         try {
             boolean success = operLogService.deleteBatch(logIds);
@@ -82,7 +82,7 @@ public class SysOperLogController {
      * 清空操作日志
      */
     @DeleteMapping("/clear")
-    @RequiresPermission({"log:list"}) // 需要日志列表查看权限
+    @RequiresPermission({"log:clear"}) // 需要日志清空权限
     public Result<Boolean> clearLog() {
         try {
             boolean success = operLogService.clearLog();

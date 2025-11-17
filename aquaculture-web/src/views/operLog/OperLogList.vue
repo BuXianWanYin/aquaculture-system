@@ -5,7 +5,7 @@
         <div class="card-header">
           <span>操作日志管理</span>
           <div>
-            <el-button type="danger" @click="handleClear" :disabled="!canViewLog">
+            <el-button type="danger" @click="handleClear" :disabled="!canClearLog">
               <el-icon><Delete /></el-icon>
               清空日志
             </el-button>
@@ -89,7 +89,15 @@
         <el-table-column label="操作" width="150" fixed="right" v-if="canViewLog">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleView(row)">查看</el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button 
+              v-if="canDeleteLog" 
+              type="danger" 
+              link 
+              size="small" 
+              @click="handleDelete(row)"
+            >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -157,6 +165,12 @@ const userStore = useUserStore()
 const { hasPermission } = usePermission()
 const canViewLog = computed(() => {
   return hasPermission('log:view')
+})
+const canDeleteLog = computed(() => {
+  return hasPermission('log:delete')
+})
+const canClearLog = computed(() => {
+  return hasPermission('log:clear')
 })
 
 const loading = ref(false)

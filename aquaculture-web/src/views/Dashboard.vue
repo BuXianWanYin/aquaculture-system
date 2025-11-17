@@ -6,30 +6,30 @@
       <el-row :gutter="20" class="stat-row">
         <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
           <el-card class="stat-card equal-height" shadow="hover">
-            <div class="stat-item">
-              <div class="stat-icon" style="background-color: #409eff;">
-                <el-icon size="30"><Document /></el-icon>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value">{{ statistics.planCount || 0 }}</div>
-                <div class="stat-label">养殖计划</div>
-              </div>
+          <div class="stat-item">
+            <div class="stat-icon" style="background-color: #409eff;">
+              <el-icon size="30"><Document /></el-icon>
             </div>
-          </el-card>
-        </el-col>
+            <div class="stat-content">
+              <div class="stat-value">{{ statistics.planCount || 0 }}</div>
+                <div class="stat-label">养殖计划</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
         <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
           <el-card class="stat-card equal-height" shadow="hover">
-            <div class="stat-item">
+          <div class="stat-item">
               <div class="stat-icon" style="background-color: #67c23a;">
-                <el-icon size="30"><DataAnalysis /></el-icon>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value">{{ statistics.yieldCount || 0 }}</div>
-                <div class="stat-label">产量统计</div>
-              </div>
+              <el-icon size="30"><DataAnalysis /></el-icon>
             </div>
-          </el-card>
-        </el-col>
+            <div class="stat-content">
+              <div class="stat-value">{{ statistics.yieldCount || 0 }}</div>
+              <div class="stat-label">产量统计</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
         <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
           <el-card class="stat-card equal-height" shadow="hover">
             <div class="stat-item">
@@ -410,12 +410,12 @@
         </el-col>
         <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
           <el-card class="stat-card equal-height" shadow="hover">
-            <div class="stat-item">
-              <div class="stat-icon" style="background-color: #f56c6c;">
-                <el-icon size="30"><Warning /></el-icon>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value">{{ statistics.pendingPlanCount || 0 }}</div>
+          <div class="stat-item">
+            <div class="stat-icon" style="background-color: #f56c6c;">
+              <el-icon size="30"><Warning /></el-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ statistics.pendingPlanCount || 0 }}</div>
                 <div class="stat-label">待办任务</div>
               </div>
             </div>
@@ -591,12 +591,12 @@
               <div class="stat-content">
                 <div class="stat-value">{{ statistics.areaCount || 0 }}</div>
                 <div class="stat-label">养殖区域</div>
-              </div>
             </div>
-          </el-card>
-        </el-col>
-      </el-row>
-
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+    
       <!-- 内容区域：审批事项、趋势分析、汇总报表 -->
       <el-row :gutter="20" style="margin-top: 20px;">
         <el-col :xs="24" :sm="24" :md="12" :lg="8" :xl="8">
@@ -722,7 +722,7 @@
               </div>
             </div>
           </div>
-        </el-card>
+    </el-card>
       </el-col>
     </el-row>
   </div>
@@ -733,7 +733,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { usePermission } from '@/composables/usePermission'
-import { useRole } from '@/composables/useRole'
 import { getStatistics, getRecentPlans, getRecentLogs, getRecentMessages } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 import {
@@ -756,14 +755,35 @@ import {
 
 const router = useRouter()
 const userStore = useUserStore()
-const { hasAnyPermission } = usePermission()
-const { isAdmin, isOperator, isDecisionMaker, isDepartmentManager } = useRole()
+const { hasAnyPermission, hasPermission } = usePermission()
 
-// 计算角色
-const isAdminRole = computed(() => isAdmin.value)
-const isDepartmentManagerRole = computed(() => isDepartmentManager.value)
-const isOperatorRole = computed(() => isOperator.value)
-const isDecisionMakerRole = computed(() => isDecisionMaker.value)
+// 基于权限判断角色
+// 系统管理员：有系统管理权限
+const isAdminRole = computed(() => {
+  return hasPermission('system:user:view') && hasPermission('system:role:view')
+})
+
+// 部门管理员：有用户管理和部门管理权限，但没有系统角色权限
+const isDepartmentManagerRole = computed(() => {
+  return hasPermission('system:user:view') && 
+         hasPermission('department:view') && 
+         !hasPermission('system:role:view')
+})
+
+// 普通操作员：有计划和产量权限，但没有系统管理权限
+const isOperatorRole = computed(() => {
+  return hasPermission('plan:view') && 
+         hasPermission('yield:view') && 
+         !hasPermission('system:user:view')
+})
+
+// 决策层：有计划和产量权限，还有销售权限，但没有系统管理权限
+const isDecisionMakerRole = computed(() => {
+  return hasPermission('plan:view') && 
+         hasPermission('yield:view') && 
+         hasPermission('sales:record:view') && 
+         !hasPermission('system:user:view')
+})
 
 const statistics = ref({
   userCount: 0,
@@ -870,9 +890,9 @@ const loadRecentPlans = async () => {
   }
 }
 
-// 加载最近操作日志（仅管理员）
+// 加载最近操作日志（有日志查看权限的用户）
 const loadRecentLogs = async () => {
-  if (!isAdminRole.value && !canAccess(['log:view'])) return
+  if (!hasPermission('log:view')) return
   try {
     const res = await getRecentLogs(10)
     if (res.code === 200) {

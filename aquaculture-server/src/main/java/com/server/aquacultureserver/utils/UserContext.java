@@ -2,6 +2,7 @@ package com.server.aquacultureserver.utils;
 
 import com.server.aquacultureserver.domain.SysUser;
 import com.server.aquacultureserver.domain.BaseArea;
+import com.server.aquacultureserver.constants.RoleConstants;
 import com.server.aquacultureserver.mapper.SysUserMapper;
 import com.server.aquacultureserver.mapper.BaseAreaMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,66 +81,79 @@ public class UserContext {
         if (user == null) {
             return null;
         }
-        // 优先使用areaId，如果没有则使用farmId（兼容）
-        return user.getAreaId() != null ? user.getAreaId() : user.getFarmId();
+        return user.getAreaId();
     }
     
     /**
-     * 判断当前用户是否为系统管理员
+     * 获取当前用户的角色名称（从request中获取，由AuthInterceptor设置）
+     */
+    private static String getCurrentUserRoleName() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                return null;
+            }
+            HttpServletRequest request = attributes.getRequest();
+            Object roleNameObj = request.getAttribute("roleName");
+            if (roleNameObj != null) {
+                return roleNameObj.toString();
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
+     * 判断当前用户是否为系统管理员（通过角色名称判断，避免硬编码角色ID）
      */
     public static boolean isAdmin() {
-        Long roleId = getCurrentUserRoleId();
-        return roleId != null && roleId == 1;
+        String roleName = getCurrentUserRoleName();
+        return RoleConstants.isAdmin(roleName);
     }
     
     /**
-     * 判断当前用户是否为普通操作员
+     * 判断当前用户是否为普通操作员（通过角色名称判断，避免硬编码角色ID）
      */
     public static boolean isOperator() {
-        Long roleId = getCurrentUserRoleId();
-        return roleId != null && roleId == 3;
+        String roleName = getCurrentUserRoleName();
+        return RoleConstants.isOperator(roleName);
     }
     
     /**
-     * 判断当前用户是否为决策层
+     * 判断当前用户是否为决策层（通过角色名称判断，避免硬编码角色ID）
      */
     public static boolean isDecisionMaker() {
-        Long roleId = getCurrentUserRoleId();
-        return roleId != null && roleId == 4;
+        String roleName = getCurrentUserRoleName();
+        return RoleConstants.isDecisionMaker(roleName);
     }
     
     /**
-     * 判断当前用户是否为部门管理员
+     * 判断当前用户是否为部门管理员（通过角色名称判断，避免硬编码角色ID）
      */
     public static boolean isDepartmentManager() {
-        Long roleId = getCurrentUserRoleId();
-        return roleId != null && roleId == 5;
+        String roleName = getCurrentUserRoleName();
+        return RoleConstants.isDepartmentManager(roleName);
     }
     
     /**
      * 获取部门管理员管理的所有区域ID列表
-     * 通过用户的areaId找到对应的departmentId，然后获取该部门下的所有区域
+     * 部门管理员直接通过departmentId获取该部门下的所有区域
      */
     public static List<Long> getDepartmentManagerAreaIds() {
         if (!isDepartmentManager()) {
             return null;
         }
         
-        Long userAreaId = getCurrentUserAreaId();
-        if (userAreaId == null || areaMapper == null) {
+        SysUser user = getCurrentUser();
+        if (user == null || user.getDepartmentId() == null || areaMapper == null) {
             return null;
         }
         
-        // 获取用户绑定的区域
-        BaseArea userArea = areaMapper.selectById(userAreaId);
-        if (userArea == null || userArea.getDepartmentId() == null) {
-            return null;
-        }
-        
-        // 查询该部门下的所有区域
+        // 直接通过用户的departmentId查询该部门下的所有区域
         List<BaseArea> areas = areaMapper.selectList(
             new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<BaseArea>()
-                .eq(BaseArea::getDepartmentId, userArea.getDepartmentId())
+                .eq(BaseArea::getDepartmentId, user.getDepartmentId())
                 .eq(BaseArea::getStatus, 1)
         );
         
@@ -150,28 +164,44 @@ public class UserContext {
     
     /**
      * 获取部门管理员管理的所有用户ID列表
-     * 通过用户的areaId找到对应的departmentId，然后获取该部门下所有区域的用户
+     * 部门管理员直接通过departmentId获取该部门下所有区域的用户（普通操作员）
+     * 同时包含部门管理员自己创建的记录
      */
     public static List<Long> getDepartmentManagerUserIds() {
         if (!isDepartmentManager()) {
             return null;
         }
         
-        List<Long> areaIds = getDepartmentManagerAreaIds();
-        if (areaIds == null || areaIds.isEmpty() || userMapper == null) {
+        SysUser currentUser = getCurrentUser();
+        if (currentUser == null || currentUser.getDepartmentId() == null || userMapper == null) {
             return null;
         }
         
-        // 查询该部门下所有区域的用户
+        // 先获取该部门下的所有区域ID
+        List<Long> areaIds = getDepartmentManagerAreaIds();
+        if (areaIds == null || areaIds.isEmpty()) {
+            // 如果没有区域，只返回部门管理员自己
+            return java.util.Collections.singletonList(currentUser.getUserId());
+        }
+        
+        // 查询该部门下所有区域的用户（普通操作员等）
         List<SysUser> users = userMapper.selectList(
             new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser>()
                 .in(SysUser::getAreaId, areaIds)
                 .eq(SysUser::getStatus, 1)
         );
         
-        return users.stream()
+        List<Long> userIds = users.stream()
             .map(SysUser::getUserId)
             .collect(Collectors.toList());
+        
+        // 添加部门管理员自己的ID（如果还没有包含）
+        Long currentUserId = currentUser.getUserId();
+        if (!userIds.contains(currentUserId)) {
+            userIds.add(currentUserId);
+        }
+        
+        return userIds;
     }
 }
 

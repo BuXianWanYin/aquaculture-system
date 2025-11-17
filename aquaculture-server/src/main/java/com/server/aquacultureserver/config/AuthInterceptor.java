@@ -36,6 +36,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     private static final String[] WHITE_LIST = {
         "/api/user/login",
         "/api/user/register",
+        "/api/department/all",  // 注册页面需要加载部门列表，不需要token
         "/error"
     };
     

@@ -91,8 +91,9 @@ public class SysUserServiceImpl implements SysUserService {
             .collect(java.util.stream.Collectors.toList());
         userDTO.setPermissions(permissionCodes);
         
-        // 设置区域ID（兼容farmId）
-        userDTO.setAreaId(user.getAreaId() != null ? user.getAreaId() : user.getFarmId());
+        // 设置区域ID和部门ID
+        userDTO.setAreaId(user.getAreaId());
+        userDTO.setDepartmentId(user.getDepartmentId());
         
         // 生成JWT token
         String token = jwtUtil.generateToken(user.getUserId(), user.getUsername(), user.getRoleId());
@@ -118,6 +119,30 @@ public class SysUserServiceImpl implements SysUserService {
     public Page<SysUser> getPage(Integer current, Integer size, String username, Long roleId) {
         Page<SysUser> page = new Page<>(current, size);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
+        
+        // 普通操作员只能查看自己创建的用户或自己
+        if (UserContext.isOperator()) {
+            Long userId = UserContext.getCurrentUserId();
+            if (userId != null) {
+                wrapper.eq(SysUser::getUserId, userId);
+            } else {
+                return page;
+            }
+        }
+        // 部门管理员只能查看所属部门下的用户（通过departmentId过滤）
+        else if (UserContext.isDepartmentManager()) {
+            SysUser currentUser = UserContext.getCurrentUser();
+            if (currentUser != null && currentUser.getDepartmentId() != null) {
+                // 部门管理员可以查看同一部门的操作员（departmentId相同，且roleId=3）
+                // 包括已启用和待审核的操作员
+                wrapper.eq(SysUser::getDepartmentId, currentUser.getDepartmentId())
+                       .eq(SysUser::getRoleId, 3L); // 操作员
+            } else {
+                // 如果部门管理员没有分配部门，返回空结果
+                return page;
+            }
+        }
+        // 系统管理员可以查看所有用户（不添加额外过滤条件）
         
         if (username != null && !username.isEmpty()) {
             wrapper.like(SysUser::getUsername, username);
@@ -152,6 +177,28 @@ public class SysUserServiceImpl implements SysUserService {
             throw new RuntimeException("用户名已存在");
         }
         
+        // 部门管理员权限检查：只能创建本部门的操作员
+        if (UserContext.isDepartmentManager()) {
+            SysUser currentUser = UserContext.getCurrentUser();
+            if (currentUser != null && currentUser.getDepartmentId() != null) {
+                // 部门管理员只能创建操作员（roleId=3），且必须属于同一部门
+                if (user.getRoleId() == null || user.getRoleId() != 3L) {
+                    throw new RuntimeException("部门管理员只能创建操作员角色");
+                }
+                // 确保部门ID匹配
+                if (user.getDepartmentId() == null || !user.getDepartmentId().equals(currentUser.getDepartmentId())) {
+                    throw new RuntimeException("部门管理员只能为本部门创建用户");
+                }
+            } else {
+                throw new RuntimeException("部门管理员未分配部门，无法创建用户");
+            }
+        }
+        
+        // 检查密码是否为空（新增用户时密码是必填的）
+        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+            throw new RuntimeException("密码不能为空");
+        }
+        
         // 加密密码
         user.setPassword(encryptPassword(user.getPassword()));
         
@@ -159,8 +206,8 @@ public class SysUserServiceImpl implements SysUserService {
         // 管理员创建用户时，status应该已经设置好了（1-启用）
         if (user.getStatus() == null) {
             user.setStatus(2); // 2-待审核
-            // 注册时不设置部门，由管理员审核时分配
-            user.setFarmId(null);
+            // 注册时不设置区域，由管理员审核时分配
+            user.setAreaId(null);
         }
         
         return userMapper.insert(user) > 0;
@@ -168,6 +215,40 @@ public class SysUserServiceImpl implements SysUserService {
     
     @Override
     public boolean updateUser(SysUser user) {
+        // 部门管理员权限检查：只能编辑本部门的操作员
+        if (UserContext.isDepartmentManager()) {
+            SysUser currentUser = UserContext.getCurrentUser();
+            SysUser targetUser = getById(user.getUserId());
+            
+            if (currentUser == null || currentUser.getDepartmentId() == null) {
+                throw new RuntimeException("部门管理员未分配部门，无法编辑用户");
+            }
+            
+            if (targetUser == null) {
+                throw new RuntimeException("用户不存在");
+            }
+            
+            // 检查目标用户是否为系统管理员（系统管理员不允许编辑）
+            if (targetUser.getRoleId() != null && targetUser.getRoleId() == 1L) {
+                throw new RuntimeException("系统管理员不允许编辑");
+            }
+            
+            // 部门管理员只能编辑本部门的操作员
+            if (targetUser.getDepartmentId() == null || !targetUser.getDepartmentId().equals(currentUser.getDepartmentId())) {
+                throw new RuntimeException("部门管理员只能编辑本部门的操作员");
+            }
+            
+            // 如果修改了角色，确保只能设置为操作员
+            if (user.getRoleId() != null && user.getRoleId() != 3L) {
+                throw new RuntimeException("部门管理员只能将用户角色设置为操作员");
+            }
+            
+            // 如果修改了部门ID，确保仍然是本部门
+            if (user.getDepartmentId() != null && !user.getDepartmentId().equals(currentUser.getDepartmentId())) {
+                throw new RuntimeException("部门管理员不能将用户分配到其他部门");
+            }
+        }
+        
         // 如果更新了用户名，检查是否重复
         if (user.getUsername() != null) {
             SysUser existUser = getByUsername(user.getUsername());
@@ -181,6 +262,30 @@ public class SysUserServiceImpl implements SysUserService {
     
     @Override
     public boolean deleteUser(Long userId) {
+        // 部门管理员权限检查：只能删除本部门的操作员
+        if (UserContext.isDepartmentManager()) {
+            SysUser currentUser = UserContext.getCurrentUser();
+            SysUser targetUser = getById(userId);
+            
+            if (currentUser == null || currentUser.getDepartmentId() == null) {
+                throw new RuntimeException("部门管理员未分配部门，无法删除用户");
+            }
+            
+            if (targetUser == null) {
+                throw new RuntimeException("用户不存在");
+            }
+            
+            // 检查目标用户是否为系统管理员（系统管理员不允许删除）
+            if (targetUser.getRoleId() != null && targetUser.getRoleId() == 1L) {
+                throw new RuntimeException("系统管理员不允许删除");
+            }
+            
+            // 部门管理员只能删除本部门的操作员
+            if (targetUser.getDepartmentId() == null || !targetUser.getDepartmentId().equals(currentUser.getDepartmentId())) {
+                throw new RuntimeException("部门管理员只能删除本部门的操作员");
+            }
+        }
+        
         return userMapper.deleteById(userId) > 0;
     }
     
@@ -191,10 +296,14 @@ public class SysUserServiceImpl implements SysUserService {
             throw new RuntimeException("用户不存在");
         }
         
-        String encryptedOldPassword = encryptPassword(oldPassword);
-        if (!encryptedOldPassword.equals(user.getPassword())) {
-            throw new RuntimeException("原密码错误");
+        // 如果提供了原密码，则验证原密码
+        if (oldPassword != null && !oldPassword.trim().isEmpty()) {
+            String encryptedOldPassword = encryptPassword(oldPassword);
+            if (!encryptedOldPassword.equals(user.getPassword())) {
+                throw new RuntimeException("原密码错误");
+            }
         }
+        // 如果没有提供原密码，则跳过原密码验证（仅限修改自己的密码，已在Controller层验证）
         
         user.setPassword(encryptPassword(newPassword));
         return userMapper.updateById(user) > 0;
@@ -207,6 +316,24 @@ public class SysUserServiceImpl implements SysUserService {
             throw new RuntimeException("用户不存在");
         }
         
+        // 部门管理员权限检查：只能重置本部门的操作员密码
+        if (UserContext.isDepartmentManager()) {
+            SysUser currentUser = UserContext.getCurrentUser();
+            if (currentUser == null || currentUser.getDepartmentId() == null) {
+                throw new RuntimeException("部门管理员未分配部门，无法重置密码");
+            }
+            
+            // 检查目标用户是否为系统管理员（系统管理员不允许重置密码）
+            if (user.getRoleId() != null && user.getRoleId() == 1L) {
+                throw new RuntimeException("系统管理员不允许重置密码");
+            }
+            
+            // 部门管理员只能重置本部门的操作员密码
+            if (user.getDepartmentId() == null || !user.getDepartmentId().equals(currentUser.getDepartmentId())) {
+                throw new RuntimeException("部门管理员只能重置本部门的操作员密码");
+            }
+        }
+        
         user.setPassword(encryptPassword(newPassword));
         return userMapper.updateById(user) > 0;
     }
@@ -217,7 +344,7 @@ public class SysUserServiceImpl implements SysUserService {
     }
     
     @Override
-    public boolean approveUser(Long userId, Integer status, Long farmId, String remark) {
+    public boolean approveUser(Long userId, Integer status, Long departmentId, Long areaId, String remark) {
         SysUser user = getById(userId);
         if (user == null) {
             throw new RuntimeException("用户不存在");
@@ -227,13 +354,62 @@ public class SysUserServiceImpl implements SysUserService {
             throw new RuntimeException("该用户不是待审核状态");
         }
         
-        // 更新用户状态和区域
+        // 检查审批权限
+        // 如果是部门管理员角色（roleId=5），只能由系统管理员审批
+        // 如果是操作员角色（roleId=3），可以由系统管理员或该部门的部门管理员审批
+        Long userRoleId = user.getRoleId();
+        boolean isAdmin = UserContext.isAdmin();
+        boolean isDepartmentManager = UserContext.isDepartmentManager();
+        
+        if (userRoleId != null && userRoleId == 5L) {
+            // 部门管理员只能由系统管理员审批
+            if (!isAdmin) {
+                throw new RuntimeException("部门管理员只能由系统管理员审批");
+            }
+        } else if (userRoleId != null && userRoleId == 3L) {
+            // 操作员可以由系统管理员或该部门的部门管理员审批
+            if (!isAdmin) {
+                if (!isDepartmentManager) {
+                    throw new RuntimeException("您没有权限审批该用户");
+                }
+                // 检查部门管理员是否有权限审批（需要验证部门是否匹配）
+                // 这里假设注册时已经设置了departmentId，需要验证当前部门管理员的部门是否匹配
+                Long currentUserDepartmentId = UserContext.getCurrentUser() != null 
+                    ? UserContext.getCurrentUser().getDepartmentId() : null;
+                Long targetDepartmentId = departmentId != null ? departmentId : 
+                    (user.getDepartmentId() != null ? user.getDepartmentId() : null);
+                
+                if (currentUserDepartmentId == null || targetDepartmentId == null 
+                    || !currentUserDepartmentId.equals(targetDepartmentId)) {
+                    throw new RuntimeException("您只能审批本部门下的操作员");
+                }
+            }
+        }
+        
+        // 更新用户状态
         user.setStatus(status); // 1-通过，0-拒绝
-        if (farmId != null) {
-            // 将farmId作为areaId使用
-            user.setAreaId(farmId);
-            // 同时更新farmId以保持兼容
-            user.setFarmId(farmId);
+        
+        // 根据角色设置部门或区域
+        if (status == 1) { // 审核通过
+            if (userRoleId != null && userRoleId == 5L) {
+                // 部门管理员：设置部门ID
+                Long finalDepartmentId = departmentId != null ? departmentId : user.getDepartmentId();
+                if (finalDepartmentId != null) {
+                    user.setDepartmentId(finalDepartmentId);
+                    // 部门管理员需要通过areaId找到对应的部门区域作为默认区域
+                    // 这里简化处理，可以选择该部门下的第一个区域，或者由管理员指定
+                }
+            } else if (userRoleId != null && userRoleId == 3L) {
+                // 操作员：设置区域ID
+                Long finalAreaId = areaId != null ? areaId : user.getAreaId();
+                if (finalAreaId != null) {
+                    user.setAreaId(finalAreaId);
+                }
+                // 如果指定了部门ID，也需要设置（通过区域可以关联到部门）
+                if (departmentId != null) {
+                    user.setDepartmentId(departmentId);
+                }
+            }
         }
         
         return userMapper.updateById(user) > 0;
@@ -253,11 +429,29 @@ public class SysUserServiceImpl implements SysUserService {
     
     @Override
     public List<SysUser> getPendingUsers() {
-        List<SysUser> users = userMapper.selectList(
-            new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getStatus, 2) // 待审核
-                .orderByDesc(SysUser::getCreateTime)
-        );
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysUser::getStatus, 2); // 待审核
+        
+        // 普通操作员不能查看待审核用户
+        if (UserContext.isOperator()) {
+            return Collections.emptyList();
+        }
+        // 部门管理员只能查看所属部门下的待审核操作员
+        else if (UserContext.isDepartmentManager()) {
+            SysUser currentUser = UserContext.getCurrentUser();
+            if (currentUser != null && currentUser.getDepartmentId() != null) {
+                // 只能查看同一部门的待审核操作员（departmentId相同，roleId=3）
+                wrapper.eq(SysUser::getDepartmentId, currentUser.getDepartmentId())
+                       .eq(SysUser::getRoleId, 3L); // 操作员
+            } else {
+                // 如果部门管理员没有分配部门，返回空结果
+                return Collections.emptyList();
+            }
+        }
+        // 系统管理员可以查看所有待审核用户（不添加额外过滤条件）
+        
+        wrapper.orderByDesc(SysUser::getCreateTime);
+        List<SysUser> users = userMapper.selectList(wrapper);
         
         // 填充角色名称
         for (SysUser user : users) {
@@ -287,8 +481,24 @@ public class SysUserServiceImpl implements SysUserService {
             } else {
                 return Collections.emptyList();
             }
-        } else if (areaId != null) {
-            // 管理员可以指定区域
+        }
+        // 部门管理员只能看到所属部门下的操作员
+        else if (UserContext.isDepartmentManager()) {
+            SysUser currentUser = UserContext.getCurrentUser();
+            if (currentUser != null && currentUser.getDepartmentId() != null) {
+                // 只能查看同一部门的操作员（departmentId相同，roleId=3）
+                wrapper.eq(SysUser::getDepartmentId, currentUser.getDepartmentId())
+                       .eq(SysUser::getRoleId, 3L); // 操作员
+                // 如果指定了区域，还需要进一步过滤
+                if (areaId != null) {
+                    wrapper.eq(SysUser::getAreaId, areaId);
+                }
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        // 系统管理员可以指定区域查看用户
+        else if (areaId != null) {
             wrapper.eq(SysUser::getAreaId, areaId);
         }
         

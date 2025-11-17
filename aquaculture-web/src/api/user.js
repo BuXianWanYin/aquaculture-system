@@ -91,8 +91,9 @@ export const deleteUser = (userId) => {
 
 /**
  * 修改密码
- * @param {Object} data - 密码数据 {userId, oldPassword, newPassword}
+ * @param {Object} data - 密码数据 {userId, newPassword} 或 {userId, oldPassword, newPassword}
  * @returns {Promise} 返回操作结果
+ * @description 在个人信息页面修改密码时不需要oldPassword，修改其他用户密码时需要oldPassword（需要原密码验证）
  */
 export const changePassword = (data) => {
   return request({
@@ -117,7 +118,7 @@ export const resetPassword = (data) => {
 
 /**
  * 用户注册
- * @param {Object} data - 注册数据 {username, password, realName, roleId, phone, address, farmId}
+ * @param {Object} data - 注册数据 {username, password, realName, roleId, phone, address, departmentId}
  * @returns {Promise} 返回操作结果
  */
 export const register = (data) => {
@@ -141,7 +142,7 @@ export const getCurrentUser = () => {
 
 /**
  * 更新个人信息
- * @param {Object} data - 用户数据 {userId, realName, phone, address, farmId, avatar}
+ * @param {Object} data - 用户数据 {userId, realName, phone, address, areaId, avatar}
  * @returns {Promise} 返回操作结果
  */
 export const updateProfile = (data) => {
@@ -181,7 +182,7 @@ export const getPendingUsers = () => {
 
 /**
  * 审核用户（通过或拒绝）
- * @param {Object} params - 审核参数 {userId, status, farmId, remark}
+ * @param {Object} params - 审核参数 {userId, status, departmentId, areaId, remark}
  * @returns {Promise} 返回操作结果
  */
 export const approveUser = (params) => {

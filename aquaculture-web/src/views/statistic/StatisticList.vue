@@ -131,7 +131,8 @@
             <div ref="areaComparisonChartRef" style="height: 300px; width: 100%;"></div>
           </el-card>
         </el-col>
-        <el-col :span="12">
+        <!-- 系统管理员才显示部门产量对比图表 -->
+        <el-col v-if="isAdminRole" :span="12">
           <el-card>
             <template #header>
               <div class="chart-header">
@@ -158,7 +159,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Document, CircleCheck, Loading, Clock } from '@element-plus/icons-vue'
 import { 
   getMonthlyYieldTrend, getBreedYieldRatio, getAreaYieldComparison, getPlanCompletionStats,
@@ -167,7 +168,22 @@ import {
 import { getAllAreas } from '@/api/area'
 import { getAllBreeds } from '@/api/breed'
 import { getAllDepartments } from '@/api/department'
+import { usePermission } from '@/composables/usePermission'
 import * as echarts from 'echarts'
+
+const { hasPermission } = usePermission()
+
+// 基于权限判断是否为系统管理员
+const isAdminRole = computed(() => {
+  return hasPermission('system:user:view') && hasPermission('system:role:view')
+})
+
+// 基于权限判断是否为部门管理员
+const isDepartmentManagerRole = computed(() => {
+  return hasPermission('system:user:view') && 
+         hasPermission('department:view') && 
+         !hasPermission('system:role:view')
+})
 
 const chartDateRange = ref(null)
 const chartDateRange2 = ref(null)
@@ -253,7 +269,10 @@ const loadMonthlyTrend = async () => {
       })
       
       const option = {
-        title: { text: '月度产量趋势（按部门）', left: 'center' },
+        title: { 
+          text: isDepartmentManagerRole.value ? '月度产量趋势（本部门）' : '月度产量趋势（按部门）', 
+          left: 'center' 
+        },
         tooltip: { 
           trigger: 'axis',
           axisPointer: { type: 'cross' }
@@ -560,7 +579,10 @@ onMounted(() => {
       loadMonthlyTrend()
       loadBreedRatio()
       loadAreaComparison()
-      loadDepartmentComparison()
+      // 只有系统管理员才加载部门对比图表
+      if (isAdminRole.value) {
+        loadDepartmentComparison()
+      }
     }, 100)
   })
 })

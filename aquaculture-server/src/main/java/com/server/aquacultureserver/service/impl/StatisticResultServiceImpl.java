@@ -11,6 +11,7 @@ import com.server.aquacultureserver.mapper.BaseAreaMapper;
 import com.server.aquacultureserver.mapper.StatisticResultMapper;
 import com.server.aquacultureserver.mapper.YieldStatisticsMapper;
 import com.server.aquacultureserver.service.StatisticResultService;
+import com.server.aquacultureserver.utils.UserContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -108,6 +109,17 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         // 查询产量统计数据
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(YieldStatistics::getStatus, 1); // 已通过审核的产量
+        
+        // 部门管理员只能查看其部门下的产量数据
+        if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                wrapper.in(YieldStatistics::getAreaId, areaIds);
+            } else {
+                return result; // 如果没有管理的区域，返回空列表
+            }
+        }
+        
         if (startDate != null) {
             wrapper.ge(YieldStatistics::getStatisticsDate, startDate);
         }
@@ -164,6 +176,17 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         // 查询产量统计数据
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(YieldStatistics::getStatus, 1); // 已通过审核的产量
+        
+        // 部门管理员只能查看其部门下的产量数据
+        if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                wrapper.in(YieldStatistics::getAreaId, areaIds);
+            } else {
+                return result; // 如果没有管理的区域，返回空列表
+            }
+        }
+        
         if (startDate != null) {
             wrapper.ge(YieldStatistics::getStatisticsDate, startDate);
         }
@@ -209,11 +232,33 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         // 先查询所有区域（只查询启用状态的区域）
         LambdaQueryWrapper<BaseArea> areaWrapper = new LambdaQueryWrapper<>();
         areaWrapper.eq(BaseArea::getStatus, 1); // 只查询启用状态的区域
+        
+        // 部门管理员只能查看其部门下的区域
+        if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                areaWrapper.in(BaseArea::getAreaId, areaIds);
+            } else {
+                return result; // 如果没有管理的区域，返回空列表
+            }
+        }
+        
         List<BaseArea> allAreas = areaMapper.selectList(areaWrapper);
         
         // 查询产量统计数据
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(YieldStatistics::getStatus, 1); // 已通过审核的产量
+        
+        // 部门管理员只能查看其部门下的产量数据
+        if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                wrapper.in(YieldStatistics::getAreaId, areaIds);
+            } else {
+                return result; // 如果没有管理的区域，返回空列表
+            }
+        }
+        
         if (startDate != null) {
             wrapper.ge(YieldStatistics::getStatisticsDate, startDate);
         }
@@ -249,7 +294,24 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         Map<String, Object> result = new HashMap<>();
         
         // 查询所有计划
-        List<AquaculturePlan> allPlans = planMapper.selectList(null);
+        LambdaQueryWrapper<AquaculturePlan> planWrapper = new LambdaQueryWrapper<>();
+        
+        // 部门管理员只能查看其部门下的计划
+        if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                planWrapper.in(AquaculturePlan::getAreaId, areaIds);
+            } else {
+                result.put("totalCount", 0);
+                result.put("completedCount", 0);
+                result.put("inProgressCount", 0);
+                result.put("pendingCount", 0);
+                result.put("completionRate", 0.0);
+                return result; // 如果没有管理的区域，返回空统计
+            }
+        }
+        
+        List<AquaculturePlan> allPlans = planMapper.selectList(planWrapper);
         
         long totalCount = allPlans.size();
         long completedCount = 0;
@@ -286,9 +348,31 @@ public class StatisticResultServiceImpl implements StatisticResultService {
     public List<Map<String, Object>> getDepartmentYieldComparison(LocalDate startDate, LocalDate endDate) {
         List<Map<String, Object>> result = new ArrayList<>();
         
+        // 部门管理员只能查看自己部门的数据
+        Long userDepartmentId = null;
+        if (UserContext.isDepartmentManager()) {
+            com.server.aquacultureserver.domain.SysUser user = UserContext.getCurrentUser();
+            if (user != null && user.getDepartmentId() != null) {
+                userDepartmentId = user.getDepartmentId();
+            } else {
+                return result; // 如果没有部门，返回空列表
+            }
+        }
+        
         // 查询产量统计数据
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(YieldStatistics::getStatus, 1); // 已通过审核的产量
+        
+        // 部门管理员只查看其部门下的产量数据
+        if (userDepartmentId != null) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                wrapper.in(YieldStatistics::getAreaId, areaIds);
+            } else {
+                return result; // 如果没有管理的区域，返回空列表
+            }
+        }
+        
         if (startDate != null) {
             wrapper.ge(YieldStatistics::getStatisticsDate, startDate);
         }
@@ -314,6 +398,10 @@ public class StatisticResultServiceImpl implements StatisticResultService {
             if (stat.getAreaId() != null && stat.getActualYield() != null) {
                 Long departmentId = areaToDepartmentMap.get(stat.getAreaId());
                 if (departmentId != null) {
+                    // 如果是部门管理员，只统计自己部门的数据
+                    if (userDepartmentId != null && !userDepartmentId.equals(departmentId)) {
+                        continue;
+                    }
                     departmentData.put(departmentId, 
                         departmentData.getOrDefault(departmentId, BigDecimal.ZERO).add(stat.getActualYield()));
                 }

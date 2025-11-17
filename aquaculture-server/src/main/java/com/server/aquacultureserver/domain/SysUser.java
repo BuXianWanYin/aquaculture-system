@@ -29,9 +29,9 @@ public class SysUser {
     @TableField(exist = false)
     private String roleName;
     
-    private Long farmId;
-    
     private Long areaId;
+    
+    private Long departmentId; // 所属部门ID（部门管理员使用）
     
     private String phone;
     

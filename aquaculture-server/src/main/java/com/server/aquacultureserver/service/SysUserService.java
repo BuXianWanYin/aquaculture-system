@@ -5,7 +5,6 @@ import com.server.aquacultureserver.domain.SysUser;
 import com.server.aquacultureserver.dto.LoginDTO;
 import com.server.aquacultureserver.dto.UserDTO;
 
-import java.util.List;
 
 /**
  * 用户服务接口
@@ -49,6 +48,9 @@ public interface SysUserService {
     
     /**
      * 修改密码
+     * @param userId 用户ID
+     * @param oldPassword 原密码（可为空，为空时跳过原密码验证，仅限修改自己的密码）
+     * @param newPassword 新密码
      */
     boolean changePassword(Long userId, String oldPassword, String newPassword);
     
@@ -64,8 +66,13 @@ public interface SysUserService {
     
     /**
      * 审核用户（通过或拒绝）
+     * @param userId 用户ID
+     * @param status 审核状态（1-通过，0-拒绝）
+     * @param departmentId 部门ID（部门管理员使用）
+     * @param areaId 区域ID（操作员使用）
+     * @param remark 备注
      */
-    boolean approveUser(Long userId, Integer status, Long farmId, String remark);
+    boolean approveUser(Long userId, Integer status, Long departmentId, Long areaId, String remark);
     
     /**
      * 获取所有管理员用户ID列表

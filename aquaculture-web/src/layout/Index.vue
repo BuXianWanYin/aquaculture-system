@@ -18,7 +18,9 @@
         </el-menu-item>
         <el-menu-item index="/message" v-if="canAccess(['message:send', 'message:view'])">
           <el-icon><Bell /></el-icon>
-          <span>消息通知</span>
+          <el-badge class="message-badge" :value="unreadMessageCount" :max="99" :hidden="unreadMessageCount === 0" :offset="[5, 2]">
+            <span>消息通知</span>
+          </el-badge>
         </el-menu-item>
         <el-sub-menu index="user" v-if="canAccess(['system:user:view', 'system:role:view', 'system:permission:view'])">
           <template #title>
@@ -138,12 +140,13 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, onUnmounted, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { usePermission } from '@/composables/usePermission'
 import { ElMessage } from 'element-plus'
 import { getCurrentUser } from '@/api/user'
+import { getUnreadCount } from '@/api/message'
 import {
   House,
   User,
@@ -180,6 +183,28 @@ const canAccess = (permissions) => {
   return hasAnyPermission(permissions)
 }
 
+// 未读消息数量
+const unreadMessageCount = ref(0)
+let unreadCountTimer = null
+
+// 加载未读消息数量（导出供子组件调用）
+const loadUnreadMessageCount = async () => {
+  const userId = userStore.userInfo?.userId
+  if (!userId) return
+  
+  try {
+    const res = await getUnreadCount(userId)
+    if (res.code === 200) {
+      unreadMessageCount.value = res.data || 0
+    }
+  } catch (error) {
+    console.error('加载未读消息数量失败', error)
+  }
+}
+
+// 提供刷新方法供子组件使用
+provide('refreshUnreadCount', loadUnreadMessageCount)
+
 const handleCommand = (command) => {
   if (command === 'profile') {
     router.push('/profile')
@@ -198,11 +223,25 @@ onMounted(async () => {
       if (res.code === 200 && res.data) {
         // 更新用户信息，包括最新的权限列表
         userStore.setUserInfo(res.data)
+        // 加载未读消息数量
+        loadUnreadMessageCount()
+        // 定时刷新未读消息数量（每30秒）
+        unreadCountTimer = setInterval(() => {
+          loadUnreadMessageCount()
+        }, 30000)
       }
     } catch (error) {
       // 如果获取用户信息失败（如token过期），静默处理
       console.error('刷新用户信息失败:', error)
     }
+  }
+})
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (unreadCountTimer) {
+    clearInterval(unreadCountTimer)
+    unreadCountTimer = null
   }
 })
 </script>
@@ -270,6 +309,22 @@ onMounted(async () => {
 .main-content {
   background-color: #f5f7fa;
   padding: 20px;
+}
+
+.message-badge {
+  margin-left: 8px;
+}
+
+.message-badge :deep(.el-badge__content) {
+  font-size: 10px;
+  height: 16px;
+  line-height: 16px;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
 </style>
 

@@ -34,6 +34,15 @@ public class BaseAreaServiceImpl implements BaseAreaService {
                 return Collections.emptyList();
             }
         }
+        // 部门管理员只能查看其部门下的所有区域
+        else if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                wrapper.in(BaseArea::getAreaId, areaIds);
+            } else {
+                return Collections.emptyList();
+            }
+        }
         
         wrapper.eq(BaseArea::getStatus, 1)
                .orderByDesc(BaseArea::getCreateTime);
@@ -55,6 +64,15 @@ public class BaseAreaServiceImpl implements BaseAreaService {
             Long userAreaId = UserContext.getCurrentUserAreaId();
             if (userAreaId != null) {
                 wrapper.eq(BaseArea::getAreaId, userAreaId);
+            } else {
+                return page; // 返回空结果
+            }
+        }
+        // 部门管理员只能查看其部门下的所有区域
+        else if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                wrapper.in(BaseArea::getAreaId, areaIds);
             } else {
                 return page; // 返回空结果
             }

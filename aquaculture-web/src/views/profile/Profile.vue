@@ -47,7 +47,7 @@
               <el-input v-model="profileForm.address" placeholder="请输入家庭地址" />
             </el-form-item>
             <el-form-item 
-              v-if="!isAdmin" 
+              v-if="hasPermission('area:view') || hasPermission('area:edit')" 
               label="所属养殖区域" 
               prop="areaId"
             >
@@ -86,9 +86,6 @@
           label-width="120px"
           style="max-width: 500px;"
         >
-          <el-form-item label="原密码" prop="oldPassword">
-            <el-input v-model="passwordForm.oldPassword" type="password" placeholder="请输入原密码" />
-          </el-form-item>
           <el-form-item label="新密码" prop="newPassword">
             <el-input v-model="passwordForm.newPassword" type="password" placeholder="请输入新密码（至少6位）" />
           </el-form-item>
@@ -112,10 +109,10 @@ import { Plus } from '@element-plus/icons-vue'
 import { getCurrentUser, updateProfile, changePassword, uploadAvatar } from '@/api/user'
 import { getAllAreas } from '@/api/area'
 import { useUserStore } from '@/stores/user'
-import { useRole } from '@/composables/useRole'
+import { usePermission } from '@/composables/usePermission'
 
 const userStore = useUserStore()
-const { isAdmin } = useRole()
+const { hasPermission } = usePermission()
 const profileFormRef = ref(null)
 const passwordFormRef = ref(null)
 const loading = ref(false)
@@ -135,7 +132,6 @@ const profileForm = reactive({
 const originalProfile = ref({})
 
 const passwordForm = reactive({
-  oldPassword: '',
   newPassword: '',
   confirmPassword: ''
 })
@@ -158,9 +154,6 @@ const validateConfirmPassword = (rule, value, callback) => {
 }
 
 const passwordRules = {
-  oldPassword: [
-    { required: true, message: '请输入原密码', trigger: 'blur' }
-  ],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
@@ -191,7 +184,7 @@ const loadUserInfo = async () => {
         realName: res.data.realName || '',
         phone: res.data.phone || '',
         address: res.data.address || '',
-        areaId: res.data.areaId || res.data.farmId || null, // 兼容farmId字段
+        areaId: res.data.areaId || null,
         avatar: res.data.avatar || ''
       })
       originalProfile.value = { ...profileForm }
@@ -253,13 +246,11 @@ const handleChangePassword = async () => {
       try {
         const res = await changePassword({
           userId: profileForm.userId,
-          oldPassword: passwordForm.oldPassword,
           newPassword: passwordForm.newPassword
         })
         if (res.code === 200) {
           ElMessage.success('密码修改成功，请重新登录')
           // 清空密码表单
-          passwordForm.oldPassword = ''
           passwordForm.newPassword = ''
           passwordForm.confirmPassword = ''
           passwordFormRef.value?.clearValidate()
@@ -273,7 +264,6 @@ const handleChangePassword = async () => {
 
 // 重置密码表单
 const handleResetPassword = () => {
-  passwordForm.oldPassword = ''
   passwordForm.newPassword = ''
   passwordForm.confirmPassword = ''
   passwordFormRef.value?.clearValidate()
@@ -317,8 +307,8 @@ const getAvatarUrl = (avatarPath) => {
 
 onMounted(() => {
   loadUserInfo()
-  // 非admin用户才加载区域列表
-  if (!isAdmin) {
+  // 有区域权限的用户才加载区域列表
+  if (hasPermission('area:view') || hasPermission('area:edit')) {
     loadAreaList()
   }
 })

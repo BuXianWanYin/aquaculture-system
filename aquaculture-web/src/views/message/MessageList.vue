@@ -4,9 +4,7 @@
       <template #header>
         <div class="card-header">
           <div>
-            <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="unread-badge">
-              <span>消息通知</span>
-            </el-badge>
+            <span>消息通知</span>
           </div>
           <div>
             <el-button type="success" @click="handleMarkAllRead" :disabled="unreadCount === 0">
@@ -189,7 +187,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, inject } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Check, CircleCheckFilled } from '@element-plus/icons-vue'
 import {
@@ -204,6 +202,9 @@ import {
 } from '@/api/message'
 import { formatDateTime } from '@/utils/date'
 import { useUserStore } from '@/stores/user'
+
+// 注入父组件提供的刷新未读数量方法
+const refreshUnreadCount = inject('refreshUnreadCount', null)
 
 const userStore = useUserStore()
 const receiverId = computed(() => userStore.userInfo?.userId)
@@ -335,6 +336,10 @@ const handleMarkRead = async (row) => {
       row.readTime = new Date().toISOString()
       loadUnreadCount()
       loadData()
+      // 通知父组件刷新未读数量
+      if (refreshUnreadCount) {
+        refreshUnreadCount()
+      }
     }
   } catch (error) {
     ElMessage.error('标记失败')
@@ -352,6 +357,10 @@ const handleMarkReadInDialog = async () => {
       messageDetail.value.readTime = new Date().toISOString()
       loadUnreadCount()
       loadData()
+      // 通知父组件刷新未读数量
+      if (refreshUnreadCount) {
+        refreshUnreadCount()
+      }
     }
   } catch (error) {
     ElMessage.error('标记失败')
@@ -370,6 +379,10 @@ const handleMarkAllRead = async () => {
       ElMessage.success('全部标记成功')
       loadUnreadCount()
       loadData()
+      // 通知父组件刷新未读数量
+      if (refreshUnreadCount) {
+        refreshUnreadCount()
+      }
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -390,6 +403,10 @@ const handleDelete = async (row) => {
       ElMessage.success('删除成功')
       loadUnreadCount()
       loadData()
+      // 通知父组件刷新未读数量（删除未读消息后数量会变化）
+      if (refreshUnreadCount) {
+        refreshUnreadCount()
+      }
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -412,6 +429,10 @@ const handleBatchDelete = async () => {
       selectedMessages.value = []
       loadUnreadCount()
       loadData()
+      // 通知父组件刷新未读数量（删除未读消息后数量会变化）
+      if (refreshUnreadCount) {
+        refreshUnreadCount()
+      }
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -449,10 +470,6 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.unread-badge {
-  margin-right: 10px;
 }
 
 .search-form {
