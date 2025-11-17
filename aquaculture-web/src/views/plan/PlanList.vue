@@ -237,7 +237,7 @@
       <el-form
         ref="adjustFormRef"
         :model="adjustForm"
-        :rules="adjustRules"
+        :rules="getAdjustRules()"
         label-width="120px"
       >
         <el-form-item label="调整类型" prop="adjustType">
@@ -251,8 +251,56 @@
         <el-form-item label="调整原因" prop="adjustReason">
           <el-input v-model="adjustForm.adjustReason" type="textarea" :rows="4" placeholder="请输入调整原因" />
         </el-form-item>
-        <el-form-item label="新参数">
-          <el-input v-model="adjustForm.newParams" type="textarea" :rows="3" placeholder="请输入新的参数（JSON格式）" />
+        <!-- 根据调整类型显示不同的输入控件 -->
+        <el-form-item 
+          v-if="adjustForm.adjustType === '延长周期'" 
+          label="延长天数" 
+          prop="cycleDays"
+        >
+          <el-input-number 
+            v-model="adjustForm.cycleDays" 
+            :min="1" 
+            placeholder="请输入延长的天数" 
+            style="width: 100%;" 
+          />
+        </el-form-item>
+        <el-form-item 
+          v-if="adjustForm.adjustType === '修改目标产量'" 
+          label="新目标产量(kg)" 
+          prop="targetYield"
+        >
+          <el-input-number 
+            v-model="adjustForm.targetYield" 
+            :min="0" 
+            :precision="2" 
+            placeholder="请输入新的目标产量" 
+            style="width: 100%;" 
+          />
+        </el-form-item>
+        <el-form-item 
+          v-if="adjustForm.adjustType === '修改投放量'" 
+          label="新投放量(kg)" 
+          prop="releaseAmount"
+        >
+          <el-input-number 
+            v-model="adjustForm.releaseAmount" 
+            :min="0" 
+            :precision="2" 
+            placeholder="请输入新的投放量" 
+            style="width: 100%;" 
+          />
+        </el-form-item>
+        <el-form-item 
+          v-if="adjustForm.adjustType === '其他'" 
+          label="新参数" 
+          prop="newParams"
+        >
+          <el-input 
+            v-model="adjustForm.newParams" 
+            type="textarea" 
+            :rows="3" 
+            placeholder="请输入新的参数（JSON格式）" 
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -264,7 +312,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getPlanList, savePlan, updatePlan, deletePlan, approvePlan, getPlanCompletionRate } from '@/api/plan'
@@ -330,7 +378,11 @@ const adjustForm = reactive({
   adjustReason: '',
   adjustType: '',
   newParams: '',
-  creatorId: null
+  creatorId: null,
+  // 根据调整类型存储不同的参数值
+  cycleDays: null,
+  targetYield: null,
+  releaseAmount: null
 })
 
 const planRules = {
@@ -357,13 +409,37 @@ const planRules = {
   ]
 }
 
-const adjustRules = {
-  adjustType: [
-    { required: true, message: '请选择调整类型', trigger: 'change' }
-  ],
-  adjustReason: [
-    { required: true, message: '请输入调整原因', trigger: 'blur' }
-  ]
+// 动态验证规则
+const getAdjustRules = () => {
+  const rules = {
+    adjustType: [
+      { required: true, message: '请选择调整类型', trigger: 'change' }
+    ],
+    adjustReason: [
+      { required: true, message: '请输入调整原因', trigger: 'blur' }
+    ]
+  }
+  
+  // 根据调整类型添加相应的验证规则
+  if (adjustForm.adjustType === '延长周期') {
+    rules.cycleDays = [
+      { required: true, message: '请输入延长天数', trigger: 'blur' }
+    ]
+  } else if (adjustForm.adjustType === '修改目标产量') {
+    rules.targetYield = [
+      { required: true, message: '请输入新目标产量', trigger: 'blur' }
+    ]
+  } else if (adjustForm.adjustType === '修改投放量') {
+    rules.releaseAmount = [
+      { required: true, message: '请输入新投放量', trigger: 'blur' }
+    ]
+  } else if (adjustForm.adjustType === '其他') {
+    rules.newParams = [
+      { required: true, message: '请输入新参数', trigger: 'blur' }
+    ]
+  }
+  
+  return rules
 }
 
 const loadData = async () => {
@@ -480,8 +556,27 @@ const handleAdjust = (row) => {
   adjustForm.adjustReason = ''
   adjustForm.adjustType = ''
   adjustForm.newParams = ''
+  // 重置参数值
+  adjustForm.cycleDays = null
+  adjustForm.targetYield = null
+  adjustForm.releaseAmount = null
   adjustDialogVisible.value = true
 }
+
+// 监听调整类型变化，清除之前的输入值和验证状态
+watch(() => adjustForm.adjustType, (newType, oldType) => {
+  if (oldType && newType !== oldType) {
+    // 清除所有参数值
+    adjustForm.cycleDays = null
+    adjustForm.targetYield = null
+    adjustForm.releaseAmount = null
+    adjustForm.newParams = ''
+    // 清除验证状态
+    if (adjustFormRef.value) {
+      adjustFormRef.value.clearValidate()
+    }
+  }
+})
 
 const handleDelete = async (row) => {
   try {
@@ -542,6 +637,26 @@ const handleAdjustSubmit = async () => {
   await adjustFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
+        // 根据调整类型构建JSON参数
+        let newParamsJson = ''
+        if (adjustForm.adjustType === '延长周期') {
+          newParamsJson = JSON.stringify({ cycleDays: adjustForm.cycleDays })
+        } else if (adjustForm.adjustType === '修改目标产量') {
+          newParamsJson = JSON.stringify({ targetYield: adjustForm.targetYield })
+        } else if (adjustForm.adjustType === '修改投放量') {
+          newParamsJson = JSON.stringify({ releaseAmount: adjustForm.releaseAmount })
+        } else if (adjustForm.adjustType === '其他') {
+          // 验证JSON格式
+          try {
+            JSON.parse(adjustForm.newParams)
+            newParamsJson = adjustForm.newParams
+          } catch (e) {
+            ElMessage.error('新参数格式不正确，请输入有效的JSON格式')
+            return
+          }
+        }
+        
+        adjustForm.newParams = newParamsJson
         const res = await saveAdjust(adjustForm)
         if (res.code === 200) {
           ElMessage.success('调整申请提交成功')

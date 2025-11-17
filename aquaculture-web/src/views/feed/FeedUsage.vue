@@ -99,6 +99,7 @@
         :model="usageForm"
         :rules="usageRules"
         label-width="120px"
+        :validate-on-rule-change="false"
       >
         <el-row :gutter="20">
           <el-col :span="12">
@@ -126,17 +127,30 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="饲料名称" prop="feedName">
-          <el-input v-model="usageForm.feedName" placeholder="请输入饲料名称" />
+        <el-form-item label="饲料名称" prop="inventoryId">
+          <el-select 
+            v-model="usageForm.inventoryId" 
+            placeholder="请选择饲料名称" 
+            style="width: 100%;" 
+            filterable
+            @change="handleInventoryChange"
+          >
+            <el-option 
+              v-for="inventory in inventoryList" 
+              :key="inventory.inventoryId" 
+              :label="inventory.feedName" 
+              :value="inventory.inventoryId"
+              :disabled="inventory.currentStock <= 0"
+            >
+              <span>{{ inventory.feedName }}</span>
+              <span style="float: right; color: #8492a6; font-size: 13px;">库存: {{ inventory.currentStock }}kg</span>
+            </el-option>
+          </el-select>
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="饲料类型" prop="feedType">
-              <el-select v-model="usageForm.feedType" placeholder="请选择类型" style="width: 100%;">
-                <el-option label="对虾专用饲料" value="对虾专用饲料" />
-                <el-option label="淡水鱼饲料" value="淡水鱼饲料" />
-                <el-option label="通用饲料" value="通用饲料" />
-              </el-select>
+              <el-input v-model="usageForm.feedType" disabled placeholder="自动绑定" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -148,7 +162,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="单价(元/kg)">
-              <el-input-number v-model="usageForm.unitPrice" :min="0" :precision="2" style="width: 100%;" />
+              <el-input-number v-model="usageForm.unitPrice" :min="0" :precision="2" style="width: 100%;" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -176,8 +190,28 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="批次号">
-              <el-input v-model="usageForm.batchNumber" placeholder="请输入批次号" />
+            <el-form-item label="批次号" prop="batchNumber">
+              <!-- 如果有采购记录，显示下拉框 -->
+              <el-select 
+                v-if="purchaseList.length > 0"
+                v-model="usageForm.batchNumber" 
+                placeholder="请选择批次号" 
+                style="width: 100%;"
+              >
+                <el-option
+                  v-for="purchase in purchaseList"
+                  :key="purchase.purchaseId"
+                  :label="getBatchOptionLabel(purchase)"
+                  :value="purchase.batchNumber || ''"
+                />
+              </el-select>
+              <!-- 如果没有采购记录，显示提示 -->
+              <el-input 
+                v-else
+                v-model="usageForm.batchNumber" 
+                placeholder="该饲料暂无采购记录，请先进行采购" 
+                disabled
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -200,6 +234,8 @@ import { Plus } from '@element-plus/icons-vue'
 import { getFeedUsageList, saveFeedUsage, updateFeedUsage, deleteFeedUsage } from '@/api/feedUsage'
 import { getAllPlans } from '@/api/plan'
 import { getAllAreas } from '@/api/area'
+import { getAllFeedInventories } from '@/api/feedInventory'
+import { getFeedPurchasesByFeed } from '@/api/feedPurchase'
 import { formatDateTime, formatDate } from '@/utils/date'
 import { usePermission } from '@/composables/usePermission'
 
@@ -213,6 +249,8 @@ const isEdit = ref(false)
 const usageFormRef = ref(null)
 const planList = ref([])
 const areaList = ref([])
+const inventoryList = ref([])
+const purchaseList = ref([])
 
 const searchForm = reactive({
   planId: null,
@@ -230,6 +268,7 @@ const usageForm = reactive({
   usageId: null,
   planId: null,
   areaId: null,
+  inventoryId: null,
   feedName: '',
   feedType: '',
   usageAmount: null,
@@ -247,14 +286,17 @@ const usageRules = {
   planId: [
     { required: true, message: '请选择养殖计划', trigger: 'change' }
   ],
-  feedName: [
-    { required: true, message: '请输入饲料名称', trigger: 'blur' }
+  inventoryId: [
+    { required: true, message: '请选择饲料名称', trigger: 'change' }
   ],
   feedType: [
     { required: true, message: '请选择饲料类型', trigger: 'change' }
   ],
   usageAmount: [
     { required: true, message: '请输入使用数量', trigger: 'blur' }
+  ],
+  batchNumber: [
+    { required: true, message: '请选择批次号', trigger: 'change' }
   ],
   usageDate: [
     { required: true, message: '请选择使用日期', trigger: 'change' }
@@ -304,6 +346,75 @@ const loadAreaList = async () => {
   }
 }
 
+const loadInventoryList = async () => {
+  try {
+    const res = await getAllFeedInventories()
+    if (res.code === 200) {
+      inventoryList.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载库存列表失败', error)
+  }
+}
+
+// 处理库存选择变化
+const handleInventoryChange = async (inventoryId) => {
+  if (inventoryId) {
+    const inventory = inventoryList.value.find(inv => inv.inventoryId === inventoryId)
+    if (inventory) {
+      usageForm.feedName = inventory.feedName
+      usageForm.feedType = inventory.feedType
+      usageForm.unitPrice = inventory.unitPrice
+      
+      // 查询该饲料的采购记录
+      try {
+        const res = await getFeedPurchasesByFeed(inventory.feedName, inventory.feedType)
+        if (res.code === 200) {
+          purchaseList.value = res.data || []
+          
+          // 如果有采购记录，默认选择第一条（如果只有一条会自动选中）
+          if (purchaseList.value.length > 0) {
+            usageForm.batchNumber = purchaseList.value[0].batchNumber || ''
+          } else {
+            // 如果没有采购记录，清空批次号
+            usageForm.batchNumber = ''
+          }
+        } else {
+          purchaseList.value = []
+          usageForm.batchNumber = ''
+        }
+      } catch (error) {
+        console.error('加载采购记录失败', error)
+        purchaseList.value = []
+        usageForm.batchNumber = ''
+      }
+    }
+  } else {
+    usageForm.feedName = ''
+    usageForm.feedType = ''
+    usageForm.unitPrice = null
+    usageForm.batchNumber = ''
+    purchaseList.value = []
+  }
+}
+
+// 获取过期日期文本
+const getExpiryDateText = (purchase) => {
+  if (!purchase || !purchase.expiryDate) {
+    return ''
+  }
+  return `过期日期: ${formatDate(purchase.expiryDate)}`
+}
+
+// 获取批次号选项标签（批次号 + 过期日期）
+const getBatchOptionLabel = (purchase) => {
+  const batchNumber = purchase.batchNumber || '无批次号'
+  if (purchase.expiryDate) {
+    return `${batchNumber} (过期日期: ${formatDate(purchase.expiryDate)})`
+  }
+  return batchNumber
+}
+
 const handlePlanChange = (planId) => {
   if (planId) {
     const plan = planList.value.find(p => p.planId === planId)
@@ -340,17 +451,25 @@ const handleReset = () => {
 const handleAdd = () => {
   isEdit.value = false
   dialogTitle.value = '新增使用记录'
-  dialogVisible.value = true
   resetForm()
+  purchaseList.value = []
+  dialogVisible.value = true
+  // 延迟清除验证，确保表单已渲染
+  setTimeout(() => {
+    usageFormRef.value?.clearValidate()
+  }, 100)
 }
 
-const handleEdit = (row) => {
+const handleEdit = async (row) => {
   isEdit.value = true
   dialogTitle.value = '编辑使用记录'
+  // 查找对应的库存ID（按饲料名称和类型）
+  const inventory = inventoryList.value.find(inv => inv.feedName === row.feedName && inv.feedType === row.feedType)
   Object.assign(usageForm, {
     usageId: row.usageId,
     planId: row.planId,
     areaId: row.areaId,
+    inventoryId: inventory ? inventory.inventoryId : null,
     feedName: row.feedName,
     feedType: row.feedType,
     usageAmount: row.usageAmount,
@@ -363,7 +482,29 @@ const handleEdit = (row) => {
     status: row.status,
     creatorId: row.creatorId
   })
+  
+  // 加载该饲料的采购记录
+  if (row.feedName && row.feedType) {
+    try {
+      const res = await getFeedPurchasesByFeed(row.feedName, row.feedType)
+      if (res.code === 200) {
+        purchaseList.value = res.data || []
+      } else {
+        purchaseList.value = []
+      }
+    } catch (error) {
+      console.error('加载采购记录失败', error)
+      purchaseList.value = []
+    }
+  } else {
+    purchaseList.value = []
+  }
+  
   dialogVisible.value = true
+  // 延迟清除验证，确保表单已渲染
+  setTimeout(() => {
+    usageFormRef.value?.clearValidate()
+  }, 100)
 }
 
 const handleDelete = async (row) => {
@@ -398,6 +539,8 @@ const handleSubmit = async () => {
           ElMessage.success(isEdit.value ? '更新成功' : '新增成功')
           dialogVisible.value = false
           loadData()
+          // 刷新库存页面
+          window.dispatchEvent(new CustomEvent('refresh-inventory'))
         }
       } catch (error) {
         ElMessage.error(error.message || '操作失败')
@@ -411,6 +554,7 @@ const resetForm = () => {
     usageId: null,
     planId: null,
     areaId: null,
+    inventoryId: null,
     feedName: '',
     feedType: '',
     usageAmount: null,
@@ -423,6 +567,7 @@ const resetForm = () => {
     status: 1,
     creatorId: null
   })
+  purchaseList.value = []
   usageFormRef.value?.clearValidate()
 }
 
@@ -442,6 +587,7 @@ onMounted(() => {
   loadData()
   loadPlanList()
   loadAreaList()
+  loadInventoryList()
 })
 </script>
 

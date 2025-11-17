@@ -148,16 +148,22 @@ public class FeedUsageServiceImpl implements FeedUsageService {
             usage.setTotalCost(usage.getUsageAmount().multiply(usage.getUnitPrice()));
         }
         
-        // 如果有库存，更新库存数量
-        if (usage.getFeedName() != null && usage.getFeedType() != null) {
-            FeedInventory inventory = inventoryService.getByFeedNameAndType(usage.getFeedName(), usage.getFeedType());
-            if (inventory != null && usage.getUsageAmount() != null) {
+        // 根据饲料名称和类型查找库存并减少库存（不按批次号）
+        if (usage.getFeedName() != null && usage.getFeedType() != null && usage.getUsageAmount() != null) {
+            FeedInventory inventory = inventoryService.getByFeedNameAndType(
+                usage.getFeedName(), 
+                usage.getFeedType()
+            );
+            if (inventory != null) {
                 BigDecimal newStock = inventory.getCurrentStock().subtract(usage.getUsageAmount());
                 if (newStock.compareTo(BigDecimal.ZERO) < 0) {
                     throw new RuntimeException("库存不足，当前库存：" + inventory.getCurrentStock() + "公斤");
                 }
                 inventory.setCurrentStock(newStock);
+                inventory.setUpdateTime(LocalDateTime.now());
                 inventoryService.updateInventory(inventory);
+            } else {
+                throw new RuntimeException("未找到对应的库存记录，请检查饲料名称和类型");
             }
         }
         
@@ -165,11 +171,71 @@ public class FeedUsageServiceImpl implements FeedUsageService {
     }
     
     @Override
+    @Transactional
     public boolean updateUsage(FeedUsage usage) {
+        // 获取原始使用记录
+        FeedUsage oldUsage = getById(usage.getUsageId());
+        if (oldUsage == null) {
+            throw new RuntimeException("使用记录不存在");
+        }
+        
         // 计算总成本
         if (usage.getUsageAmount() != null && usage.getUnitPrice() != null) {
             usage.setTotalCost(usage.getUsageAmount().multiply(usage.getUnitPrice()));
         }
+        
+        // 如果使用数量、饲料名称或类型发生变化，需要更新库存
+        boolean needUpdateInventory = false;
+        BigDecimal oldAmount = oldUsage.getUsageAmount() != null ? oldUsage.getUsageAmount() : BigDecimal.ZERO;
+        BigDecimal newAmount = usage.getUsageAmount() != null ? usage.getUsageAmount() : BigDecimal.ZERO;
+        
+        String oldFeedName = oldUsage.getFeedName() == null ? "" : oldUsage.getFeedName();
+        String newFeedName = usage.getFeedName() == null ? "" : usage.getFeedName();
+        String oldFeedType = oldUsage.getFeedType() == null ? "" : oldUsage.getFeedType();
+        String newFeedType = usage.getFeedType() == null ? "" : usage.getFeedType();
+        
+        if (!oldAmount.equals(newAmount) || 
+            !oldFeedName.equals(newFeedName) ||
+            !oldFeedType.equals(newFeedType)) {
+            needUpdateInventory = true;
+        }
+        
+        if (needUpdateInventory) {
+            // 恢复旧记录的库存（按饲料名称+类型）
+            if (oldUsage.getFeedName() != null && oldUsage.getFeedType() != null && oldUsage.getUsageAmount() != null) {
+                FeedInventory oldInventory = inventoryService.getByFeedNameAndType(
+                    oldUsage.getFeedName(), 
+                    oldUsage.getFeedType()
+                );
+                if (oldInventory != null) {
+                    BigDecimal restoredStock = oldInventory.getCurrentStock().add(oldAmount);
+                    oldInventory.setCurrentStock(restoredStock);
+                    oldInventory.setUpdateTime(LocalDateTime.now());
+                    inventoryService.updateInventory(oldInventory);
+                }
+            }
+            
+            // 减少新记录的库存（按饲料名称+类型）
+            if (usage.getFeedName() != null && usage.getFeedType() != null && usage.getUsageAmount() != null) {
+                FeedInventory newInventory = inventoryService.getByFeedNameAndType(
+                    usage.getFeedName(), 
+                    usage.getFeedType()
+                );
+                if (newInventory != null) {
+                    BigDecimal newStock = newInventory.getCurrentStock().subtract(newAmount);
+                    if (newStock.compareTo(BigDecimal.ZERO) < 0) {
+                        throw new RuntimeException("库存不足，当前库存：" + newInventory.getCurrentStock() + "公斤");
+                    }
+                    newInventory.setCurrentStock(newStock);
+                    newInventory.setUpdateTime(LocalDateTime.now());
+                    inventoryService.updateInventory(newInventory);
+                } else {
+                    throw new RuntimeException("未找到对应的库存记录，请检查饲料名称和类型");
+                }
+            }
+        }
+        
+        usage.setUpdateTime(LocalDateTime.now());
         return usageMapper.updateById(usage) > 0;
     }
     
@@ -190,12 +256,28 @@ public class FeedUsageServiceImpl implements FeedUsageService {
                 throw new RuntimeException("您只能删除本部门下区域的使用记录");
             }
         }
-        // 软删除，将状态设置为0
+        // 软删除，将状态设置为0，并恢复库存
         FeedUsage usage = getById(usageId);
         if (usage == null) {
             throw new RuntimeException("使用记录不存在");
         }
+        
+        // 恢复库存（按饲料名称+类型）
+        if (usage.getFeedName() != null && usage.getFeedType() != null && usage.getUsageAmount() != null && usage.getStatus() == 1) {
+            FeedInventory inventory = inventoryService.getByFeedNameAndType(
+                usage.getFeedName(), 
+                usage.getFeedType()
+            );
+            if (inventory != null) {
+                BigDecimal restoredStock = inventory.getCurrentStock().add(usage.getUsageAmount());
+                inventory.setCurrentStock(restoredStock);
+                inventory.setUpdateTime(LocalDateTime.now());
+                inventoryService.updateInventory(inventory);
+            }
+        }
+        
         usage.setStatus(0);
+        usage.setUpdateTime(LocalDateTime.now());
         return usageMapper.updateById(usage) > 0;
     }
     

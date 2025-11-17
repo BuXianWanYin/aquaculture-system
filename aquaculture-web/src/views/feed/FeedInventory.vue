@@ -2,10 +2,6 @@
   <div class="feed-inventory">
     <div class="card-header">
       <span>饲料库存管理</span>
-      <el-button v-if="hasPermission('feed:inventory:add')" type="primary" @click="handleAdd">
-        <el-icon><Plus /></el-icon>
-        新增库存
-      </el-button>
     </div>
     
     <el-form :inline="true" :model="searchForm" class="search-form">
@@ -37,22 +33,14 @@
         </template>
       </el-table-column>
       <el-table-column prop="unitPrice" label="单价(元/kg)" width="120" />
-      <el-table-column prop="batchNumber" label="批次号" width="140" />
-      <el-table-column prop="expiryDate" label="保质期至" width="120">
-        <template #default="{ row }">
-          {{ formatDate(row.expiryDate) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="warehouseLocation" label="仓储位置" width="150" />
       <el-table-column prop="createTime" label="创建时间" min-width="180">
         <template #default="{ row }">
           {{ formatDateTime(row.createTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="150" fixed="right">
         <template #default="{ row }">
-          <el-button v-if="hasPermission('feed:inventory:edit')" type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
-          <el-button v-if="hasPermission('feed:inventory:delete')" type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+          <el-button v-if="hasPermission('feed:inventory:edit')" type="primary" link size="small" @click="handleDetail(row)">详情</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -69,76 +57,78 @@
       />
     </div>
     
-    <!-- 库存表单对话框 -->
+    <!-- 库存详情对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="dialogTitle"
-      width="700px"
+      title="库存详情"
+      width="900px"
       @close="handleDialogClose"
     >
       <el-form
-        ref="inventoryFormRef"
         :model="inventoryForm"
-        :rules="inventoryRules"
         label-width="120px"
       >
-        <el-form-item label="饲料名称" prop="feedName">
-          <el-input v-model="inventoryForm.feedName" placeholder="请输入饲料名称" />
+        <el-form-item label="饲料名称">
+          <el-input v-model="inventoryForm.feedName" disabled />
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="饲料类型" prop="feedType">
-              <el-select v-model="inventoryForm.feedType" placeholder="请选择类型" style="width: 100%;">
-                <el-option label="对虾专用饲料" value="对虾专用饲料" />
-                <el-option label="淡水鱼饲料" value="淡水鱼饲料" />
-                <el-option label="通用饲料" value="通用饲料" />
-              </el-select>
+            <el-form-item label="饲料类型">
+              <el-input v-model="inventoryForm.feedType" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="当前库存(kg)" prop="currentStock">
-              <el-input-number v-model="inventoryForm.currentStock" :min="0" :precision="2" style="width: 100%;" />
+            <el-form-item label="当前库存(kg)">
+              <el-input-number v-model="inventoryForm.currentStock" :min="0" :precision="2" style="width: 100%;" disabled />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="单价(元/kg)">
-              <el-input-number v-model="inventoryForm.unitPrice" :min="0" :precision="2" style="width: 100%;" />
+              <el-input-number v-model="inventoryForm.unitPrice" :min="0" :precision="2" style="width: 100%;" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="保质期至">
-              <el-date-picker 
-                v-model="inventoryForm.expiryDate" 
-                type="date" 
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-                style="width: 100%;" 
-              />
+            <el-form-item label="创建时间">
+              <el-input v-model="inventoryForm.createTime" disabled />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="批次号">
-          <el-input v-model="inventoryForm.batchNumber" placeholder="请输入批次号" />
-        </el-form-item>
-        <el-form-item label="仓储位置">
-          <el-input v-model="inventoryForm.warehouseLocation" placeholder="请输入仓储位置" />
-        </el-form-item>
       </el-form>
+      
+      <el-divider content-position="left">相关采购记录</el-divider>
+      <el-table :data="purchaseList" border stripe style="width: 100%; margin-top: 10px;" max-height="300">
+        <el-table-column type="index" label="序号" width="60" />
+        <el-table-column prop="purchaseDate" label="采购日期" width="120">
+          <template #default="{ row }">
+            {{ formatDate(row.purchaseDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="supplier" label="供应商" min-width="150" />
+        <el-table-column prop="purchaseAmount" label="采购数量(kg)" width="140" />
+        <el-table-column prop="unitPrice" label="单价(元/kg)" width="120" />
+        <el-table-column prop="totalPrice" label="总价(元)" width="120" />
+        <el-table-column prop="batchNumber" label="批次号" width="140" />
+        <el-table-column prop="expiryDate" label="保质期至" width="120">
+          <template #default="{ row }">
+            {{ formatDate(row.expiryDate) }}
+          </template>
+        </el-table-column>
+      </el-table>
+      
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button @click="dialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import { getFeedInventoryList, saveFeedInventory, updateFeedInventory, deleteFeedInventory } from '@/api/feedInventory'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getFeedInventoryList } from '@/api/feedInventory'
+import { getFeedPurchasesByFeed } from '@/api/feedPurchase'
 import { formatDateTime, formatDate } from '@/utils/date'
 import { usePermission } from '@/composables/usePermission'
 
@@ -147,9 +137,8 @@ const { hasPermission } = usePermission()
 const loading = ref(false)
 const tableData = ref([])
 const dialogVisible = ref(false)
-const dialogTitle = ref('新增库存')
-const isEdit = ref(false)
 const inventoryFormRef = ref(null)
+const purchaseList = ref([])
 
 const searchForm = reactive({
   feedName: '',
@@ -168,24 +157,11 @@ const inventoryForm = reactive({
   feedType: '',
   currentStock: 0,
   unitPrice: null,
-  batchNumber: '',
-  expiryDate: null,
-  warehouseLocation: '',
   status: 1,
-  creatorId: null
+  creatorId: null,
+  createTime: null
 })
 
-const inventoryRules = {
-  feedName: [
-    { required: true, message: '请输入饲料名称', trigger: 'blur' }
-  ],
-  feedType: [
-    { required: true, message: '请选择饲料类型', trigger: 'change' }
-  ],
-  currentStock: [
-    { required: true, message: '请输入当前库存', trigger: 'blur' }
-  ]
-}
 
 const loadData = async () => {
   loading.value = true
@@ -218,70 +194,34 @@ const handleReset = () => {
   handleSearch()
 }
 
-const handleAdd = () => {
-  isEdit.value = false
-  dialogTitle.value = '新增库存'
-  dialogVisible.value = true
-  resetForm()
-}
-
-const handleEdit = (row) => {
-  isEdit.value = true
-  dialogTitle.value = '编辑库存'
+const handleDetail = async (row) => {
   Object.assign(inventoryForm, {
     inventoryId: row.inventoryId,
     feedName: row.feedName,
     feedType: row.feedType,
     currentStock: row.currentStock,
     unitPrice: row.unitPrice,
-    batchNumber: row.batchNumber || '',
-    expiryDate: row.expiryDate,
-    warehouseLocation: row.warehouseLocation || '',
     status: row.status,
-    creatorId: row.creatorId
+    creatorId: row.creatorId,
+    createTime: row.createTime ? formatDateTime(row.createTime) : ''
   })
+  
+  // 加载相关采购记录
+  try {
+    const res = await getFeedPurchasesByFeed(row.feedName, row.feedType)
+    if (res.code === 200) {
+      purchaseList.value = res.data || []
+    } else {
+      purchaseList.value = []
+    }
+  } catch (error) {
+    console.error('加载采购记录失败', error)
+    purchaseList.value = []
+  }
+  
   dialogVisible.value = true
 }
 
-const handleDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要删除该库存记录吗？', '提示', {
-      type: 'warning'
-    })
-    const res = await deleteFeedInventory(row.inventoryId)
-    if (res.code === 200) {
-      ElMessage.success('删除成功')
-      loadData()
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
-  }
-}
-
-const handleSubmit = async () => {
-  if (!inventoryFormRef.value) return
-  await inventoryFormRef.value.validate(async (valid) => {
-    if (valid) {
-      try {
-        let res
-        if (isEdit.value) {
-          res = await updateFeedInventory(inventoryForm)
-        } else {
-          res = await saveFeedInventory(inventoryForm)
-        }
-        if (res.code === 200) {
-          ElMessage.success(isEdit.value ? '更新成功' : '新增成功')
-          dialogVisible.value = false
-          loadData()
-        }
-      } catch (error) {
-        ElMessage.error(error.message || '操作失败')
-      }
-    }
-  })
-}
 
 const resetForm = () => {
   Object.assign(inventoryForm, {
@@ -290,13 +230,11 @@ const resetForm = () => {
     feedType: '',
     currentStock: 0,
     unitPrice: null,
-    batchNumber: '',
-    expiryDate: null,
-    warehouseLocation: '',
     status: 1,
-    creatorId: null
+    creatorId: null,
+    createTime: null
   })
-  inventoryFormRef.value?.clearValidate()
+  purchaseList.value = []
 }
 
 const handleDialogClose = () => {
@@ -313,6 +251,13 @@ const handleCurrentChange = () => {
 
 onMounted(() => {
   loadData()
+  // 监听库存刷新事件
+  window.addEventListener('refresh-inventory', loadData)
+})
+
+onUnmounted(() => {
+  // 组件卸载时移除事件监听
+  window.removeEventListener('refresh-inventory', loadData)
 })
 </script>
 

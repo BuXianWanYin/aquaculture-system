@@ -104,6 +104,19 @@ public class FeedInventoryServiceImpl implements FeedInventoryService {
     }
     
     @Override
+    public FeedInventory getByFeedNameAndBatchNumber(String feedName, String batchNumber) {
+        LambdaQueryWrapper<FeedInventory> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FeedInventory::getFeedName, feedName);
+        if (batchNumber != null && !batchNumber.isEmpty()) {
+            wrapper.eq(FeedInventory::getBatchNumber, batchNumber);
+        } else {
+            wrapper.and(w -> w.isNull(FeedInventory::getBatchNumber).or().eq(FeedInventory::getBatchNumber, ""));
+        }
+        wrapper.eq(FeedInventory::getStatus, 1);
+        return inventoryMapper.selectOne(wrapper);
+    }
+    
+    @Override
     public long count() {
         LambdaQueryWrapper<FeedInventory> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(FeedInventory::getStatus, 1);

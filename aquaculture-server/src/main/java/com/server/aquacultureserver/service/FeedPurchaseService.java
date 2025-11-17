@@ -44,5 +44,10 @@ public interface FeedPurchaseService {
      * 统计采购记录总数
      */
     long count();
+    
+    /**
+     * 根据饲料名称和类型查询采购记录
+     */
+    List<FeedPurchase> getByFeedNameAndType(String feedName, String feedType);
 }
 

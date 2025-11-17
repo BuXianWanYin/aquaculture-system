@@ -82,16 +82,48 @@
       <el-form
         ref="purchaseFormRef"
         :model="purchaseForm"
-        :rules="purchaseRules"
+        :rules="getPurchaseRules()"
         label-width="120px"
+        :validate-on-rule-change="false"
       >
+        <el-form-item label="采购模式" v-if="!isEdit">
+          <el-radio-group v-model="purchaseMode" @change="handlePurchaseModeChange">
+            <el-radio label="new">新采购</el-radio>
+            <el-radio label="existing">已有采购</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item 
+          v-if="purchaseMode === 'existing' && !isEdit" 
+          label="选择已有采购" 
+          prop="existingPurchaseId"
+        >
+          <el-select 
+            v-model="purchaseForm.existingPurchaseId" 
+            placeholder="请选择已有采购" 
+            style="width: 100%;" 
+            filterable
+            @change="handleExistingPurchaseChange"
+          >
+            <el-option 
+              v-for="purchase in existingPurchaseList" 
+              :key="purchase.purchaseId" 
+              :label="`${purchase.feedName} - ${purchase.supplier} - ${purchase.purchaseDate}`" 
+              :value="purchase.purchaseId"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="饲料名称" prop="feedName">
-          <el-input v-model="purchaseForm.feedName" placeholder="请输入饲料名称" />
+          <el-input v-model="purchaseForm.feedName" placeholder="请输入饲料名称" :disabled="purchaseMode === 'existing' && !isEdit" />
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="饲料类型" prop="feedType">
-              <el-select v-model="purchaseForm.feedType" placeholder="请选择类型" style="width: 100%;">
+              <el-select 
+                v-model="purchaseForm.feedType" 
+                placeholder="请选择类型" 
+                style="width: 100%;"
+                :disabled="purchaseMode === 'existing' && !isEdit"
+              >
                 <el-option label="对虾专用饲料" value="对虾专用饲料" />
                 <el-option label="淡水鱼饲料" value="淡水鱼饲料" />
                 <el-option label="通用饲料" value="通用饲料" />
@@ -100,7 +132,11 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="供应商" prop="supplier">
-              <el-input v-model="purchaseForm.supplier" placeholder="请输入供应商" />
+              <el-input 
+                v-model="purchaseForm.supplier" 
+                placeholder="请输入供应商" 
+                :disabled="purchaseMode === 'existing' && !isEdit"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -156,7 +192,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { getFeedPurchaseList, saveFeedPurchase, updateFeedPurchase, deleteFeedPurchase } from '@/api/feedPurchase'
+import { getFeedPurchaseList, saveFeedPurchase, updateFeedPurchase, deleteFeedPurchase, getAllFeedPurchases } from '@/api/feedPurchase'
 import { formatDateTime, formatDate } from '@/utils/date'
 import { usePermission } from '@/composables/usePermission'
 
@@ -168,6 +204,8 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('新增采购')
 const isEdit = ref(false)
 const purchaseFormRef = ref(null)
+const purchaseMode = ref('new') // 'new' 新采购, 'existing' 已有采购
+const existingPurchaseList = ref([])
 
 const searchForm = reactive({
   feedName: '',
@@ -183,6 +221,7 @@ const pagination = reactive({
 
 const purchaseForm = reactive({
   purchaseId: null,
+  existingPurchaseId: null,
   feedName: '',
   feedType: '',
   supplier: '',
@@ -196,22 +235,32 @@ const purchaseForm = reactive({
   creatorId: null
 })
 
-const purchaseRules = {
-  feedName: [
-    { required: true, message: '请输入饲料名称', trigger: 'blur' }
-  ],
-  feedType: [
-    { required: true, message: '请选择饲料类型', trigger: 'change' }
-  ],
-  purchaseAmount: [
-    { required: true, message: '请输入采购数量', trigger: 'blur' }
-  ],
-  unitPrice: [
-    { required: true, message: '请输入单价', trigger: 'blur' }
-  ],
-  purchaseDate: [
-    { required: true, message: '请选择采购日期', trigger: 'change' }
-  ]
+const getPurchaseRules = () => {
+  const rules = {
+    feedName: [
+      { required: true, message: '请输入饲料名称', trigger: 'blur' }
+    ],
+    feedType: [
+      { required: true, message: '请选择饲料类型', trigger: 'change' }
+    ],
+    purchaseAmount: [
+      { required: true, message: '请输入采购数量', trigger: 'blur' }
+    ],
+    unitPrice: [
+      { required: true, message: '请输入单价', trigger: 'blur' }
+    ],
+    purchaseDate: [
+      { required: true, message: '请选择采购日期', trigger: 'change' }
+    ]
+  }
+  
+  if (purchaseMode.value === 'existing' && !isEdit.value) {
+    rules.existingPurchaseId = [
+      { required: true, message: '请选择已有采购', trigger: 'change' }
+    ]
+  }
+  
+  return rules
 }
 
 const loadData = async () => {
@@ -247,11 +296,58 @@ const handleReset = () => {
   handleSearch()
 }
 
+const loadExistingPurchaseList = async () => {
+  try {
+    const res = await getAllFeedPurchases()
+    if (res.code === 200) {
+      existingPurchaseList.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载已有采购列表失败', error)
+  }
+}
+
+
+// 处理采购模式变化
+const handlePurchaseModeChange = (mode) => {
+  if (mode === 'existing') {
+    purchaseForm.existingPurchaseId = null
+    purchaseForm.feedName = ''
+    purchaseForm.feedType = ''
+    purchaseForm.supplier = ''
+    purchaseForm.unitPrice = null
+    purchaseForm.batchNumber = ''
+    purchaseForm.expiryDate = null
+  } else {
+    purchaseForm.existingPurchaseId = null
+  }
+}
+
+// 处理已有采购选择变化
+const handleExistingPurchaseChange = (purchaseId) => {
+  if (purchaseId) {
+    const purchase = existingPurchaseList.value.find(p => p.purchaseId === purchaseId)
+    if (purchase) {
+      purchaseForm.feedName = purchase.feedName
+      purchaseForm.feedType = purchase.feedType
+      purchaseForm.supplier = purchase.supplier
+      purchaseForm.unitPrice = purchase.unitPrice
+      purchaseForm.batchNumber = purchase.batchNumber || ''
+      purchaseForm.expiryDate = purchase.expiryDate
+    }
+  }
+}
+
 const handleAdd = () => {
   isEdit.value = false
+  purchaseMode.value = 'new'
   dialogTitle.value = '新增采购'
-  dialogVisible.value = true
   resetForm()
+  dialogVisible.value = true
+  // 延迟清除验证，确保表单已渲染
+  setTimeout(() => {
+    purchaseFormRef.value?.clearValidate()
+  }, 100)
 }
 
 const handleEdit = (row) => {
@@ -272,6 +368,10 @@ const handleEdit = (row) => {
     creatorId: row.creatorId
   })
   dialogVisible.value = true
+  // 延迟清除验证，确保表单已渲染
+  setTimeout(() => {
+    purchaseFormRef.value?.clearValidate()
+  }, 100)
 }
 
 const handleDelete = async (row) => {
@@ -306,6 +406,8 @@ const handleSubmit = async () => {
           ElMessage.success(isEdit.value ? '更新成功' : '新增成功')
           dialogVisible.value = false
           loadData()
+          // 刷新库存页面
+          window.dispatchEvent(new CustomEvent('refresh-inventory'))
         }
       } catch (error) {
         ElMessage.error(error.message || '操作失败')
@@ -314,9 +416,11 @@ const handleSubmit = async () => {
   })
 }
 
+
 const resetForm = () => {
   Object.assign(purchaseForm, {
     purchaseId: null,
+    existingPurchaseId: null,
     feedName: '',
     feedType: '',
     supplier: '',
@@ -346,6 +450,7 @@ const handleCurrentChange = () => {
 
 onMounted(() => {
   loadData()
+  loadExistingPurchaseList()
 })
 </script>
 

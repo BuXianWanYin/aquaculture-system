@@ -97,5 +97,20 @@ public class FeedPurchaseController {
             return Result.error(e.getMessage());
         }
     }
+    
+    /**
+     * 根据饲料名称和类型查询采购记录
+     */
+    @GetMapping("/byFeed")
+    public Result<List<FeedPurchase>> getByFeedNameAndType(
+            @RequestParam String feedName,
+            @RequestParam String feedType) {
+        try {
+            List<FeedPurchase> purchases = purchaseService.getByFeedNameAndType(feedName, feedType);
+            return Result.success(purchases);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
 }
 

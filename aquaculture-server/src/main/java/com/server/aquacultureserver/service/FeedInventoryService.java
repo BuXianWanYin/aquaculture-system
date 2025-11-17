@@ -46,6 +46,11 @@ public interface FeedInventoryService {
     FeedInventory getByFeedNameAndType(String feedName, String feedType);
     
     /**
+     * 根据饲料名称和批次号查询库存
+     */
+    FeedInventory getByFeedNameAndBatchNumber(String feedName, String batchNumber);
+    
+    /**
      * 统计库存记录总数
      */
     long count();

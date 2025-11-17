@@ -74,3 +74,20 @@ export const deleteFeedPurchase = (purchaseId) => {
   })
 }
 
+/**
+ * 根据饲料名称和类型查询采购记录
+ * @param {String} feedName - 饲料名称
+ * @param {String} feedType - 饲料类型
+ * @returns {Promise} 返回采购记录列表
+ */
+export const getFeedPurchasesByFeed = (feedName, feedType) => {
+  return request({
+    url: '/feed/purchase/byFeed',
+    method: 'get',
+    params: {
+      feedName,
+      feedType
+    }
+  })
+}
+
