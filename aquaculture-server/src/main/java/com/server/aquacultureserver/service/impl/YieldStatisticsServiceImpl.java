@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.aquacultureserver.domain.YieldStatistics;
 import com.server.aquacultureserver.mapper.YieldStatisticsMapper;
-import com.server.aquacultureserver.service.AquaculturePlanService;
 import com.server.aquacultureserver.service.YieldStatisticsService;
 import com.server.aquacultureserver.utils.UserContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +22,6 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
     @Autowired
     private YieldStatisticsMapper statisticsMapper;
     
-    @Autowired
-    private AquaculturePlanService planService;
     
     @Override
     public List<YieldStatistics> getAllStatistics() {
@@ -194,22 +191,21 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
         
         boolean result = statisticsMapper.updateById(statistics) > 0;
         
-        // 如果审核通过（status=1）且有关联的计划，检查并更新计划状态
-        if (result && status == 1 && statistics.getPlanId() != null) {
-            try {
-                planService.checkAndUpdatePlanStatus(statistics.getPlanId());
-            } catch (Exception e) {
-                // 计划状态更新失败不影响产量审核结果
-                System.err.println("更新计划状态失败: " + e.getMessage());
-            }
-        }
-        
         return result;
     }
     
     @Override
     public long count() {
         return statisticsMapper.selectCount(null);
+    }
+    
+    @Override
+    public List<YieldStatistics> getByPlanId(Long planId) {
+        LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(YieldStatistics::getPlanId, planId);
+        wrapper.eq(YieldStatistics::getStatus, 1); // 只查询已审核通过的产量统计
+        wrapper.orderByDesc(YieldStatistics::getStatisticsDate);
+        return statisticsMapper.selectList(wrapper);
     }
 }
 

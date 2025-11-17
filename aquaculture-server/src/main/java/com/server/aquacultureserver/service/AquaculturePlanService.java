@@ -16,6 +16,12 @@ public interface AquaculturePlanService {
     List<AquaculturePlan> getAllPlans();
     
     /**
+     * 查询已审核通过的计划（用于下拉选择）
+     * status != 0 (待审批) && status != 2 (已驳回)
+     */
+    List<AquaculturePlan> getApprovedPlans();
+    
+    /**
      * 根据ID查询计划
      */
     AquaculturePlan getById(Long planId);

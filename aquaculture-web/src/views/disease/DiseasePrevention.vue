@@ -169,7 +169,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getDiseasePreventionList, saveDiseasePrevention, updateDiseasePrevention, deleteDiseasePrevention, getDiseasePreventionsByRecordId } from '@/api/diseasePrevention'
 import { getAllDiseaseRecords } from '@/api/diseaseRecord'
-import { getAllPlans } from '@/api/plan'
+import { getApprovedPlans } from '@/api/plan'
 import { getAllAreas } from '@/api/area'
 import { formatDateTime, formatDate } from '@/utils/date'
 import { usePermission } from '@/composables/usePermission'
@@ -255,9 +255,10 @@ const loadDiseaseRecordList = async () => {
   }
 }
 
+// 加载计划列表（只加载已审核通过的计划）
 const loadPlanList = async () => {
   try {
-    const res = await getAllPlans()
+    const res = await getApprovedPlans()
     if (res.code === 200) {
       planList.value = res.data || []
     }

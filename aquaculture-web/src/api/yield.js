@@ -87,3 +87,15 @@ export const auditYield = (data) => {
   })
 }
 
+/**
+ * 根据计划ID查询产量统计
+ * @param {Number} planId - 计划ID
+ * @returns {Promise} 返回产量统计列表
+ */
+export const getYieldByPlanId = (planId) => {
+  return request({
+    url: `/yield/byPlan/${planId}`,
+    method: 'get'
+  })
+}
+

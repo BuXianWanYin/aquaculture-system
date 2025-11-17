@@ -102,11 +102,38 @@
         :model="usageForm"
         :rules="usageRules"
         label-width="120px"
+        :validate-on-rule-change="false"
       >
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="病害记录">
-              <el-select v-model="usageForm.recordId" placeholder="请选择病害记录" style="width: 100%;" filterable @change="handleRecordChange">
+            <el-form-item label="养殖计划" prop="planId">
+              <el-select v-model="usageForm.planId" placeholder="请选择计划" style="width: 100%;" filterable @change="handlePlanChange">
+                <el-option 
+                  v-for="plan in planList" 
+                  :key="plan.planId" 
+                  :label="plan.planName" 
+                  :value="plan.planId" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="所属区域" prop="areaId">
+              <el-select v-model="usageForm.areaId" placeholder="请选择区域" style="width: 100%;" filterable :disabled="!!usageForm.planId">
+                <el-option 
+                  v-for="area in areaList" 
+                  :key="area.areaId" 
+                  :label="area.areaName" 
+                  :value="area.areaId" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="病害记录" prop="recordId">
+              <el-select v-model="usageForm.recordId" placeholder="请选择病害记录" style="width: 100%;" filterable :disabled="!usageForm.planId">
                 <el-option 
                   v-for="record in diseaseRecordList" 
                   :key="record.recordId" 
@@ -128,42 +155,47 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-form-item label="药品名称" prop="medicineName">
+          <el-select 
+            v-model="usageForm.medicineName" 
+            placeholder="请选择药品名称" 
+            style="width: 100%;" 
+            filterable
+            @change="handleMedicineChange"
+          >
+            <el-option 
+              v-for="inventory in medicineInventoryList" 
+              :key="inventory.inventoryId" 
+              :label="inventory.medicineName" 
+              :value="inventory.medicineName"
+              :disabled="inventory.currentStock <= 0"
+            >
+              <span>{{ inventory.medicineName }}</span>
+              <span style="float: right; color: #8492a6; font-size: 13px;">库存: {{ inventory.currentStock }}{{ inventory.unit }}</span>
+            </el-option>
+          </el-select>
+        </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="药品名称" prop="medicineName">
-              <el-input v-model="usageForm.medicineName" placeholder="请输入药品名称" />
+            <el-form-item label="药品类型" prop="medicineType">
+              <el-input v-model="usageForm.medicineType" disabled placeholder="自动绑定" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="药品类型" prop="medicineType">
-              <el-select v-model="usageForm.medicineType" placeholder="请选择类型" style="width: 100%;">
-                <el-option label="抗生素" value="抗生素" />
-                <el-option label="消毒剂" value="消毒剂" />
-                <el-option label="中药" value="中药" />
-                <el-option label="益生菌" value="益生菌" />
-                <el-option label="抗病毒药" value="抗病毒药" />
-              </el-select>
+            <el-form-item label="单位">
+              <el-input v-model="usageForm.unit" disabled placeholder="自动绑定" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="用量" prop="dosage">
               <el-input-number v-model="usageForm.dosage" :min="0" :precision="2" style="width: 100%;" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="单位">
-              <el-select v-model="usageForm.unit" placeholder="请选择单位" style="width: 100%;">
-                <el-option label="克" value="克" />
-                <el-option label="毫升" value="毫升" />
-                <el-option label="公斤" value="公斤" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="单价(元)">
-              <el-input-number v-model="usageForm.unitPrice" :min="0" :precision="2" style="width: 100%;" />
+              <el-input-number v-model="usageForm.unitPrice" :min="0" :precision="2" style="width: 100%;" disabled />
             </el-form-item>
           </el-col>
         </el-row>
@@ -179,20 +211,32 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="批次号">
-              <el-input v-model="usageForm.batchNumber" placeholder="请输入批次号" />
+            <el-form-item label="批次号" prop="batchNumber">
+              <!-- 如果有采购记录，显示下拉框 -->
+              <el-select 
+                v-if="purchaseList.length > 0"
+                v-model="usageForm.batchNumber" 
+                placeholder="请选择批次号" 
+                style="width: 100%;"
+                @change="handleBatchChange"
+              >
+                <el-option
+                  v-for="purchase in purchaseList"
+                  :key="purchase.purchaseId"
+                  :label="getBatchOptionLabel(purchase)"
+                  :value="purchase.batchNumber || ''"
+                />
+              </el-select>
+              <!-- 如果没有采购记录，显示提示 -->
+              <el-input 
+                v-else
+                v-model="usageForm.batchNumber" 
+                placeholder="该药品暂无采购记录，请先进行采购" 
+                disabled
+              />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="有效期至">
-          <el-date-picker 
-            v-model="usageForm.expiryDate" 
-            type="date" 
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-            style="width: 100%;" 
-          />
-        </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="usageForm.remarks" type="textarea" :rows="2" placeholder="请输入备注" />
         </el-form-item>
@@ -210,9 +254,11 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getMedicineUsageList, saveMedicineUsage, updateMedicineUsage, deleteMedicineUsage } from '@/api/medicineUsage'
-import { getAllDiseaseRecords } from '@/api/diseaseRecord'
-import { getAllPlans } from '@/api/plan'
+import { getAllDiseaseRecords, getDiseaseRecordsByPlanId } from '@/api/diseaseRecord'
+import { getApprovedPlans } from '@/api/plan'
 import { getAllAreas } from '@/api/area'
+import { getAllMedicineInventories } from '@/api/medicineInventory'
+import { getMedicinePurchasesByMedicine } from '@/api/medicinePurchase'
 import { formatDateTime, formatDate } from '@/utils/date'
 import { usePermission } from '@/composables/usePermission'
 
@@ -227,6 +273,8 @@ const usageFormRef = ref(null)
 const diseaseRecordList = ref([])
 const planList = ref([])
 const areaList = ref([])
+const medicineInventoryList = ref([])
+const purchaseList = ref([])
 
 const searchForm = reactive({
   recordId: null,
@@ -262,17 +310,23 @@ const usageForm = reactive({
 })
 
 const usageRules = {
-  medicineName: [
-    { required: true, message: '请输入药品名称', trigger: 'blur' }
+  planId: [
+    { required: true, message: '请选择养殖计划', trigger: 'change' }
   ],
-  medicineType: [
-    { required: true, message: '请选择药品类型', trigger: 'change' }
+  recordId: [
+    { required: true, message: '请选择病害记录', trigger: 'change' }
+  ],
+  medicineName: [
+    { required: true, message: '请选择药品名称', trigger: 'change' }
   ],
   dosage: [
     { required: true, message: '请输入用量', trigger: 'blur' }
   ],
   usageDate: [
     { required: true, message: '请选择用药日期', trigger: 'change' }
+  ],
+  batchNumber: [
+    { required: true, message: '请选择批次号', trigger: 'change' }
   ]
 }
 
@@ -297,20 +351,37 @@ const loadData = async () => {
   }
 }
 
-const loadDiseaseRecordList = async () => {
+const loadDiseaseRecordList = async (planId) => {
+  if (!planId) {
+    diseaseRecordList.value = []
+    return
+  }
   try {
-    const res = await getAllDiseaseRecords()
+    const res = await getDiseaseRecordsByPlanId(planId)
     if (res.code === 200) {
       diseaseRecordList.value = res.data || []
     }
   } catch (error) {
     console.error('加载病害记录列表失败', error)
+    diseaseRecordList.value = []
   }
 }
 
+const loadMedicineInventoryList = async () => {
+  try {
+    const res = await getAllMedicineInventories()
+    if (res.code === 200) {
+      medicineInventoryList.value = (res.data || []).filter(item => item.status === 1)
+    }
+  } catch (error) {
+    console.error('加载药品库存列表失败', error)
+  }
+}
+
+// 加载计划列表（只加载已审核通过的计划）
 const loadPlanList = async () => {
   try {
-    const res = await getAllPlans()
+    const res = await getApprovedPlans()
     if (res.code === 200) {
       planList.value = res.data || []
     }
@@ -330,14 +401,95 @@ const loadAreaList = async () => {
   }
 }
 
-const handleRecordChange = (recordId) => {
-  if (recordId) {
-    const record = diseaseRecordList.value.find(r => r.recordId === recordId)
-    if (record) {
-      usageForm.planId = record.planId
-      usageForm.areaId = record.areaId
+const handlePlanChange = async (planId) => {
+  if (planId) {
+    const plan = planList.value.find(p => p.planId === planId)
+    if (plan) {
+      usageForm.areaId = plan.areaId
+      // 加载该计划下的病害记录
+      await loadDiseaseRecordList(planId)
+      // 如果只有一条病害记录，自动选择
+      if (diseaseRecordList.value.length === 1) {
+        usageForm.recordId = diseaseRecordList.value[0].recordId
+      } else {
+        usageForm.recordId = null
+      }
     }
+  } else {
+    usageForm.areaId = null
+    usageForm.recordId = null
+    diseaseRecordList.value = []
   }
+  // 清除表单验证
+  setTimeout(() => {
+    usageFormRef.value?.clearValidate()
+  }, 100)
+}
+
+const handleMedicineChange = async (medicineName) => {
+  if (medicineName) {
+    const inventory = medicineInventoryList.value.find(i => i.medicineName === medicineName)
+    if (inventory) {
+      usageForm.medicineType = inventory.medicineType
+      usageForm.unit = inventory.unit
+      usageForm.unitPrice = inventory.unitPrice
+      // 加载该药品的采购记录
+      await loadPurchaseList(medicineName, inventory.medicineType)
+      // 如果只有一条采购记录，自动选择批次号
+      if (purchaseList.value.length === 1) {
+        usageForm.batchNumber = purchaseList.value[0].batchNumber || ''
+        usageForm.expiryDate = purchaseList.value[0].expiryDate
+      } else {
+        usageForm.batchNumber = ''
+        usageForm.expiryDate = null
+      }
+    }
+  } else {
+    usageForm.medicineType = ''
+    usageForm.unit = '克'
+    usageForm.unitPrice = null
+    usageForm.batchNumber = ''
+    usageForm.expiryDate = null
+    purchaseList.value = []
+  }
+  // 清除表单验证
+  setTimeout(() => {
+    usageFormRef.value?.clearValidate()
+  }, 100)
+}
+
+const loadPurchaseList = async (medicineName, medicineType) => {
+  if (!medicineName || !medicineType) {
+    purchaseList.value = []
+    return
+  }
+  try {
+    const res = await getMedicinePurchasesByMedicine(medicineName, medicineType)
+    if (res.code === 200) {
+      purchaseList.value = (res.data || []).filter(item => item.status === 1)
+    }
+  } catch (error) {
+    console.error('加载采购记录失败', error)
+    purchaseList.value = []
+  }
+}
+
+const handleBatchChange = (batchNumber) => {
+  if (batchNumber) {
+    const purchase = purchaseList.value.find(p => p.batchNumber === batchNumber)
+    if (purchase) {
+      usageForm.expiryDate = purchase.expiryDate
+    }
+  } else {
+    usageForm.expiryDate = null
+  }
+}
+
+const getBatchOptionLabel = (purchase) => {
+  if (purchase.expiryDate) {
+    return `${purchase.batchNumber} (有效期至: ${formatDate(purchase.expiryDate)})`
+  }
+  return purchase.batchNumber || ''
 }
 
 const getPlanName = (planId) => {
@@ -369,9 +521,13 @@ const handleAdd = () => {
   dialogTitle.value = '新增用药记录'
   dialogVisible.value = true
   resetForm()
+  // 清除表单验证
+  setTimeout(() => {
+    usageFormRef.value?.clearValidate()
+  }, 100)
 }
 
-const handleEdit = (row) => {
+const handleEdit = async (row) => {
   isEdit.value = true
   dialogTitle.value = '编辑用药记录'
   Object.assign(usageForm, {
@@ -394,7 +550,19 @@ const handleEdit = (row) => {
     status: row.status,
     creatorId: row.creatorId
   })
+  // 加载该计划下的病害记录
+  if (row.planId) {
+    await loadDiseaseRecordList(row.planId)
+  }
+  // 加载该药品的采购记录
+  if (row.medicineName && row.medicineType) {
+    await loadPurchaseList(row.medicineName, row.medicineType)
+  }
   dialogVisible.value = true
+  // 清除表单验证
+  setTimeout(() => {
+    usageFormRef.value?.clearValidate()
+  }, 100)
 }
 
 const handleDelete = async (row) => {
@@ -406,6 +574,8 @@ const handleDelete = async (row) => {
     if (res.code === 200) {
       ElMessage.success('删除成功')
       loadData()
+      // 刷新药品库存页面
+      window.dispatchEvent(new CustomEvent('refresh-medicine-inventory'))
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -429,6 +599,8 @@ const handleSubmit = async () => {
           ElMessage.success(isEdit.value ? '更新成功' : '新增成功')
           dialogVisible.value = false
           loadData()
+          // 刷新药品库存页面
+          window.dispatchEvent(new CustomEvent('refresh-medicine-inventory'))
         }
       } catch (error) {
         ElMessage.error(error.message || '操作失败')
@@ -458,6 +630,8 @@ const resetForm = () => {
     status: 1,
     creatorId: null
   })
+  diseaseRecordList.value = []
+  purchaseList.value = []
   usageFormRef.value?.clearValidate()
 }
 
@@ -475,9 +649,9 @@ const handleCurrentChange = () => {
 
 onMounted(() => {
   loadData()
-  loadDiseaseRecordList()
   loadPlanList()
   loadAreaList()
+  loadMedicineInventoryList()
 })
 </script>
 

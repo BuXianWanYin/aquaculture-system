@@ -32,6 +32,15 @@ public class YieldStatisticsController {
     }
     
     /**
+     * 根据计划ID查询产量统计
+     */
+    @GetMapping("/byPlan/{planId}")
+    public Result<List<YieldStatistics>> getByPlanId(@PathVariable Long planId) {
+        List<YieldStatistics> statistics = statisticsService.getByPlanId(planId);
+        return Result.success(statistics);
+    }
+    
+    /**
      * 分页查询产量统计列表
      */
     @GetMapping("/page")

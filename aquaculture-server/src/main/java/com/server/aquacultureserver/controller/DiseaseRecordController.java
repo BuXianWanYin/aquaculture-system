@@ -98,5 +98,14 @@ public class DiseaseRecordController {
             return Result.error(e.getMessage());
         }
     }
+    
+    /**
+     * 根据计划ID查询病害记录列表
+     */
+    @GetMapping("/byPlan/{planId}")
+    public Result<List<DiseaseRecord>> getByPlanId(@PathVariable Long planId) {
+        List<DiseaseRecord> records = recordService.getByPlanId(planId);
+        return Result.success(records);
+    }
 }
 

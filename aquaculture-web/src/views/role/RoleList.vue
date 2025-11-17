@@ -107,7 +107,7 @@
         :props="{ children: 'children', label: 'permissionName' }"
         show-checkbox
         node-key="permissionId"
-        :default-expand-all="true"
+        :default-expand-all="false"
         @check="handlePermissionCheck"
       />
       <template #footer>

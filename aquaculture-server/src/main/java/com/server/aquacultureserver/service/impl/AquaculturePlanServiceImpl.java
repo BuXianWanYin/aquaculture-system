@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -44,6 +43,37 @@ public class AquaculturePlanServiceImpl implements AquaculturePlanService {
                 wrapper.eq(AquaculturePlan::getAreaId, areaId);
             } else {
                 // 如果没有分配区域，返回空列表
+                return Collections.emptyList();
+            }
+        }
+        // 部门管理员只能查看其部门下所有区域的计划
+        else if (UserContext.isDepartmentManager()) {
+            List<Long> areaIds = UserContext.getDepartmentManagerAreaIds();
+            if (areaIds != null && !areaIds.isEmpty()) {
+                wrapper.in(AquaculturePlan::getAreaId, areaIds);
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        
+        wrapper.orderByDesc(AquaculturePlan::getCreateTime);
+        return planMapper.selectList(wrapper);
+    }
+    
+    @Override
+    public List<AquaculturePlan> getApprovedPlans() {
+        LambdaQueryWrapper<AquaculturePlan> wrapper = new LambdaQueryWrapper<>();
+        
+        // 只查询已审核通过的计划：status != 0 (待审批) && status != 2 (已驳回)
+        wrapper.ne(AquaculturePlan::getStatus, 0);
+        wrapper.ne(AquaculturePlan::getStatus, 2);
+        
+        // 普通操作员只能查看自己区域的计划
+        if (UserContext.isOperator()) {
+            Long areaId = UserContext.getCurrentUserAreaId();
+            if (areaId != null) {
+                wrapper.eq(AquaculturePlan::getAreaId, areaId);
+            } else {
                 return Collections.emptyList();
             }
         }
@@ -152,11 +182,6 @@ public class AquaculturePlanServiceImpl implements AquaculturePlanService {
         
         boolean result = planMapper.insert(plan) > 0;
         
-        // 保存后检查状态（如果开始日期已到达）
-        if (result && plan.getPlanId() != null) {
-            checkAndUpdatePlanStatus(plan.getPlanId());
-        }
-        
         return result;
     }
     
@@ -197,11 +222,6 @@ public class AquaculturePlanServiceImpl implements AquaculturePlanService {
         }
         
         boolean result = planMapper.updateById(plan) > 0;
-        
-        // 更新后检查状态
-        if (result && plan.getPlanId() != null) {
-            checkAndUpdatePlanStatus(plan.getPlanId());
-        }
         
         return result;
     }
@@ -268,47 +288,13 @@ public class AquaculturePlanServiceImpl implements AquaculturePlanService {
     
     /**
      * 检查并更新计划状态（基于日期和产量）
-     * 开始日期到达 → 自动改为"执行中"（3）
-     * 结束日期到达且累计产量 ≥ 目标产量 → 改为"已完成"（4）
-     * 结束日期到达但产量未达标 → 保持"执行中"
+     * 注意：自动状态转换规则已移除，状态需要手动管理
+     * 保留此方法以便将来可能需要恢复自动状态转换功能
      */
     @Transactional
     public void checkAndUpdatePlanStatus(Long planId) {
-        AquaculturePlan plan = getById(planId);
-        if (plan == null) {
-            return;
-        }
-        
-        LocalDate today = LocalDate.now();
-        boolean needUpdate = false;
-        
-        // 1. 如果计划已通过审批（status=1）且开始日期已到达，改为执行中
-        if (plan.getStatus() == 1 && plan.getStartDate() != null && 
-            !today.isBefore(plan.getStartDate())) {
-            plan.setStatus(3);
-            needUpdate = true;
-        }
-        
-        // 2. 如果计划在执行中（status=3），检查是否应该完成
-        if (plan.getStatus() == 3 && plan.getEndDate() != null) {
-            // 计算累计实际产量
-            BigDecimal totalYield = calculateTotalYield(planId);
-            
-            // 如果结束日期已到达
-            if (!today.isBefore(plan.getEndDate())) {
-                // 如果累计产量 >= 目标产量，改为已完成
-                if (plan.getTargetYield() != null && totalYield != null &&
-                    totalYield.compareTo(plan.getTargetYield()) >= 0) {
-                    plan.setStatus(4);
-                    needUpdate = true;
-                }
-                // 否则保持执行中状态（产量未达标）
-            }
-        }
-        
-        if (needUpdate) {
-            planMapper.updateById(plan);
-        }
+        // 自动状态转换规则已移除
+        // 状态转换现在完全由用户手动控制
     }
     
     /**

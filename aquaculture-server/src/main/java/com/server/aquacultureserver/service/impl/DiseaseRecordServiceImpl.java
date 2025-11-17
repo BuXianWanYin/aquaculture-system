@@ -160,5 +160,14 @@ public class DiseaseRecordServiceImpl implements DiseaseRecordService {
         wrapper.eq(DiseaseRecord::getStatus, 1);
         return recordMapper.selectCount(wrapper);
     }
+    
+    @Override
+    public List<DiseaseRecord> getByPlanId(Long planId) {
+        LambdaQueryWrapper<DiseaseRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DiseaseRecord::getPlanId, planId);
+        wrapper.eq(DiseaseRecord::getStatus, 1);
+        wrapper.orderByDesc(DiseaseRecord::getCreateTime);
+        return recordMapper.selectList(wrapper);
+    }
 }
 

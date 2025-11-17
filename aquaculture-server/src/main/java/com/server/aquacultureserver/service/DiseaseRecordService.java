@@ -44,5 +44,10 @@ public interface DiseaseRecordService {
      * 统计病害记录总数
      */
     long count();
+    
+    /**
+     * 根据计划ID查询病害记录列表
+     */
+    List<DiseaseRecord> getByPlanId(Long planId);
 }
 

@@ -74,3 +74,15 @@ export const deleteDiseaseRecord = (recordId) => {
   })
 }
 
+/**
+ * 根据计划ID查询病害记录列表
+ * @param {Number} planId - 计划ID
+ * @returns {Promise} 返回病害记录列表
+ */
+export const getDiseaseRecordsByPlanId = (planId) => {
+  return request({
+    url: `/disease/record/byPlan/${planId}`,
+    method: 'get'
+  })
+}
+

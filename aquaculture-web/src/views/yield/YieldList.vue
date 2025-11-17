@@ -432,7 +432,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled, Plus, Picture } from '@element-plus/icons-vue'
 import { getYieldList, saveYield, updateYield, deleteYield, auditYield } from '@/api/yield'
 import { getEvidenceList, deleteEvidence, uploadEvidence, saveEvidence } from '@/api/yieldEvidence'
-import { getAllPlans } from '@/api/plan'
+import { getApprovedPlans } from '@/api/plan'
 import { getAllAreas } from '@/api/area'
 import { getAllBreeds } from '@/api/breed'
 import { getUserListForSelect } from '@/api/user'
@@ -1115,10 +1115,10 @@ const handlePictureCardPreview = (file) => {
   previewDialogVisible.value = true
 }
 
-// 加载计划列表
+// 加载计划列表（只加载已审核通过的计划）
 const loadPlanList = async () => {
   try {
-    const res = await getAllPlans()
+    const res = await getApprovedPlans()
     if (res.code === 200) {
       planList.value = res.data || []
     }

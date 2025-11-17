@@ -133,25 +133,25 @@
       >
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="产量统计">
-              <el-select v-model="recordForm.yieldId" placeholder="请选择产量统计" style="width: 100%;" filterable @change="handleYieldChange" clearable>
-                <el-option 
-                  v-for="item in yieldList" 
-                  :key="item.yieldId" 
-                  :label="`${formatDate(item.statisticsDate)} - ${item.actualYield}kg`" 
-                  :value="item.yieldId" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
             <el-form-item label="养殖计划" prop="planId">
-              <el-select v-model="recordForm.planId" placeholder="请选择计划" style="width: 100%;" filterable @change="handlePlanChange" :disabled="!!recordForm.yieldId">
+              <el-select v-model="recordForm.planId" placeholder="请选择计划" style="width: 100%;" filterable @change="handlePlanChange">
                 <el-option 
                   v-for="plan in planList" 
                   :key="plan.planId" 
                   :label="plan.planName" 
                   :value="plan.planId" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="产量统计" prop="yieldId">
+              <el-select v-model="recordForm.yieldId" placeholder="请选择产量统计" style="width: 100%;" filterable :disabled="!recordForm.planId">
+                <el-option 
+                  v-for="item in yieldList" 
+                  :key="item.yieldId" 
+                  :label="`${formatDate(item.statisticsDate)} - ${item.actualYield}kg`" 
+                  :value="item.yieldId" 
                 />
               </el-select>
             </el-form-item>
@@ -265,9 +265,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getSalesRecordList, saveSalesRecord, updateSalesRecord, deleteSalesRecord } from '@/api/salesRecord'
 import { getAllCustomers } from '@/api/customer'
-import { getAllPlans } from '@/api/plan'
+import { getApprovedPlans } from '@/api/plan'
 import { getAllAreas } from '@/api/area'
-import { getAllStatistics } from '@/api/yield'
+import { getYieldByPlanId } from '@/api/yield'
 import { formatDateTime, formatDate } from '@/utils/date'
 import { usePermission } from '@/composables/usePermission'
 
@@ -321,6 +321,9 @@ const recordRules = {
   planId: [
     { required: true, message: '请选择养殖计划', trigger: 'change' }
   ],
+  yieldId: [
+    { required: true, message: '请选择产量统计', trigger: 'change' }
+  ],
   customerId: [
     { required: true, message: '请选择客户', trigger: 'change' }
   ],
@@ -359,7 +362,7 @@ const loadData = async () => {
 
 const loadPlanList = async () => {
   try {
-    const res = await getAllPlans()
+    const res = await getApprovedPlans()
     if (res.code === 200) {
       planList.value = res.data || []
     }
@@ -390,35 +393,37 @@ const loadCustomerList = async () => {
   }
 }
 
-const loadYieldList = async () => {
-  try {
-    const res = await getAllStatistics()
-    if (res.code === 200) {
-      yieldList.value = res.data || []
-    }
-  } catch (error) {
-    console.error('加载产量统计列表失败', error)
-  }
-}
-
-const handleYieldChange = (yieldId) => {
-  if (yieldId) {
-    const yieldItem = yieldList.value.find(y => y.yieldId === yieldId)
-    if (yieldItem) {
-      recordForm.planId = yieldItem.planId
-      recordForm.areaId = yieldItem.areaId
-      recordForm.breedId = yieldItem.breedId
-    }
-  }
-}
-
-const handlePlanChange = (planId) => {
+const handlePlanChange = async (planId) => {
   if (planId) {
     const plan = planList.value.find(p => p.planId === planId)
     if (plan) {
       recordForm.areaId = plan.areaId
       recordForm.breedId = plan.breedId
     }
+    
+    // 加载该计划的产量统计
+    try {
+      const res = await getYieldByPlanId(planId)
+      if (res.code === 200) {
+        yieldList.value = res.data || []
+        // 如果只有一条产量统计，自动选中
+        if (yieldList.value.length === 1) {
+          recordForm.yieldId = yieldList.value[0].yieldId
+        } else {
+          recordForm.yieldId = null
+        }
+      } else {
+        yieldList.value = []
+        recordForm.yieldId = null
+      }
+    } catch (error) {
+      console.error('加载产量统计列表失败', error)
+      yieldList.value = []
+      recordForm.yieldId = null
+    }
+  } else {
+    yieldList.value = []
+    recordForm.yieldId = null
   }
 }
 
@@ -473,7 +478,7 @@ const handleAdd = () => {
   resetForm()
 }
 
-const handleEdit = (row) => {
+const handleEdit = async (row) => {
   isEdit.value = true
   dialogTitle.value = '编辑销售记录'
   Object.assign(recordForm, {
@@ -495,6 +500,24 @@ const handleEdit = (row) => {
     status: row.status,
     creatorId: row.creatorId
   })
+  
+  // 如果有计划ID，加载该计划的产量统计
+  if (row.planId) {
+    try {
+      const res = await getYieldByPlanId(row.planId)
+      if (res.code === 200) {
+        yieldList.value = res.data || []
+      } else {
+        yieldList.value = []
+      }
+    } catch (error) {
+      console.error('加载产量统计列表失败', error)
+      yieldList.value = []
+    }
+  } else {
+    yieldList.value = []
+  }
+  
   dialogVisible.value = true
 }
 
@@ -558,6 +581,7 @@ const resetForm = () => {
     status: 1,
     creatorId: null
   })
+  yieldList.value = []
   recordFormRef.value?.clearValidate()
 }
 
@@ -578,7 +602,7 @@ onMounted(() => {
   loadPlanList()
   loadAreaList()
   loadCustomerList()
-  loadYieldList()
+  // 产量统计现在根据计划动态加载，不需要在这里加载
 })
 </script>
 

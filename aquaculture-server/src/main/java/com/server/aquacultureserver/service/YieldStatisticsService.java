@@ -49,5 +49,10 @@ public interface YieldStatisticsService {
      * 统计产量记录总数
      */
     long count();
+    
+    /**
+     * 根据计划ID查询产量统计（用于下拉选择）
+     */
+    List<YieldStatistics> getByPlanId(Long planId);
 }
 

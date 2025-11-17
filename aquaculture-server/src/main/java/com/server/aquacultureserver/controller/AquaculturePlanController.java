@@ -38,6 +38,15 @@ public class AquaculturePlanController {
     }
     
     /**
+     * 查询已审核通过的计划（用于下拉选择）
+     */
+    @GetMapping("/approved")
+    public Result<List<AquaculturePlan>> getApprovedPlans() {
+        List<AquaculturePlan> plans = planService.getApprovedPlans();
+        return Result.success(plans);
+    }
+    
+    /**
      * 分页查询计划列表
      */
     @GetMapping("/page")
@@ -125,11 +134,6 @@ public class AquaculturePlanController {
             Integer status = Integer.valueOf(params.get("status").toString());
             
             boolean success = planService.approvePlan(planId, approverId, approveOpinion, status);
-            
-            // 审批通过后检查计划状态
-            if (success && status == 1) {
-                planService.checkAndUpdatePlanStatus(planId);
-            }
             
             return Result.success("审批成功", success);
         } catch (Exception e) {

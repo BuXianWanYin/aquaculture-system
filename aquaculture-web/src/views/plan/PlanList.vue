@@ -195,6 +195,29 @@
         <el-form-item label="防疫计划">
           <el-input v-model="planForm.preventionPlan" type="textarea" :rows="3" />
         </el-form-item>
+        <el-form-item 
+          v-if="isEdit && originalPlanStatus !== null && (originalPlanStatus === 1 || originalPlanStatus === 3 || originalPlanStatus === 4)" 
+          label="状态" 
+          prop="status"
+        >
+          <el-select v-model="planForm.status" placeholder="请选择状态" style="width: 100%;">
+            <!-- 如果原状态是已通过（1），可以保持已通过，或改为执行中、已完成 -->
+            <template v-if="originalPlanStatus === 1">
+              <el-option label="已通过" :value="1" />
+              <el-option label="执行中" :value="3" />
+              <el-option label="已完成" :value="4" />
+            </template>
+            <!-- 如果原状态是执行中（3），可以保持执行中，或改为已完成 -->
+            <template v-else-if="originalPlanStatus === 3">
+              <el-option label="执行中" :value="3" />
+              <el-option label="已完成" :value="4" />
+            </template>
+            <!-- 如果原状态是已完成（4），只能保持已完成 -->
+            <template v-else-if="originalPlanStatus === 4">
+              <el-option label="已完成" :value="4" />
+            </template>
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -245,7 +268,6 @@
             <el-option label="延长周期" value="延长周期" />
             <el-option label="修改目标产量" value="修改目标产量" />
             <el-option label="修改投放量" value="修改投放量" />
-            <el-option label="其他" value="其他" />
           </el-select>
         </el-form-item>
         <el-form-item label="调整原因" prop="adjustReason">
@@ -290,18 +312,6 @@
             style="width: 100%;" 
           />
         </el-form-item>
-        <el-form-item 
-          v-if="adjustForm.adjustType === '其他'" 
-          label="新参数" 
-          prop="newParams"
-        >
-          <el-input 
-            v-model="adjustForm.newParams" 
-            type="textarea" 
-            :rows="3" 
-            placeholder="请输入新的参数（JSON格式）" 
-          />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="adjustDialogVisible = false">取消</el-button>
@@ -336,6 +346,7 @@ const isEdit = ref(false)
 const planFormRef = ref(null)
 const adjustFormRef = ref(null)
 const currentPlan = ref({})
+const originalPlanStatus = ref(null) // 保存编辑时的原始状态
 const areaList = ref([])
 const breedList = ref([])
 
@@ -433,10 +444,6 @@ const getAdjustRules = () => {
     rules.releaseAmount = [
       { required: true, message: '请输入新投放量', trigger: 'blur' }
     ]
-  } else if (adjustForm.adjustType === '其他') {
-    rules.newParams = [
-      { required: true, message: '请输入新参数', trigger: 'blur' }
-    ]
   }
   
   return rules
@@ -523,6 +530,7 @@ const handleAdd = () => {
 const handleEdit = (row) => {
   isEdit.value = true
   dialogTitle.value = '编辑计划'
+  originalPlanStatus.value = row.status // 保存原始状态
   Object.assign(planForm, {
     planId: row.planId,
     planName: row.planName,
@@ -600,6 +608,38 @@ const handleSubmit = async () => {
   await planFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
+        // 编辑时，如果修改了状态，需要验证状态转换的合法性
+        if (isEdit.value && planForm.status !== undefined && originalPlanStatus.value !== null) {
+          // 如果原状态是已通过（1），只能修改为执行中（3）或已完成（4），或者保持为1
+          if (originalPlanStatus.value === 1) {
+            if (planForm.status !== 1 && planForm.status !== 3 && planForm.status !== 4) {
+              ElMessage.error('已通过的计划只能修改为执行中或已完成')
+              return
+            }
+          }
+          // 如果原状态是执行中（3），只能修改为已完成（4），或者保持为3
+          else if (originalPlanStatus.value === 3) {
+            if (planForm.status !== 3 && planForm.status !== 4) {
+              ElMessage.error('执行中的计划只能修改为已完成')
+              return
+            }
+          }
+          // 如果原状态是已完成（4），只能保持为4
+          else if (originalPlanStatus.value === 4) {
+            if (planForm.status !== 4) {
+              ElMessage.error('已完成的计划不能再修改状态')
+              return
+            }
+          }
+          // 其他状态（0待审批、2已驳回、5已取消）不允许修改状态
+          else {
+            if (planForm.status === 3 || planForm.status === 4) {
+              ElMessage.error('只有已通过、执行中或已完成的计划才能修改状态')
+              return
+            }
+          }
+        }
+        
         planForm.creatorId = userStore.userInfo?.userId
         let res
         if (isEdit.value) {
@@ -645,15 +685,6 @@ const handleAdjustSubmit = async () => {
           newParamsJson = JSON.stringify({ targetYield: adjustForm.targetYield })
         } else if (adjustForm.adjustType === '修改投放量') {
           newParamsJson = JSON.stringify({ releaseAmount: adjustForm.releaseAmount })
-        } else if (adjustForm.adjustType === '其他') {
-          // 验证JSON格式
-          try {
-            JSON.parse(adjustForm.newParams)
-            newParamsJson = adjustForm.newParams
-          } catch (e) {
-            ElMessage.error('新参数格式不正确，请输入有效的JSON格式')
-            return
-          }
         }
         
         adjustForm.newParams = newParamsJson
@@ -686,6 +717,7 @@ const resetForm = () => {
     status: 0,
     creatorId: null
   })
+  originalPlanStatus.value = null
   planFormRef.value?.clearValidate()
 }
 

@@ -25,6 +25,17 @@ export const getAllPlans = () => {
 }
 
 /**
+ * 查询已审核通过的计划（用于下拉选择）
+ * @returns {Promise} 返回已审核通过的计划列表
+ */
+export const getApprovedPlans = () => {
+  return request({
+    url: '/plan/approved',
+    method: 'get'
+  })
+}
+
+/**
  * 根据计划ID查询计划详情
  * @param {Number} planId - 计划ID
  * @returns {Promise} 返回计划信息
