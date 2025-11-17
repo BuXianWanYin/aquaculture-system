@@ -2,8 +2,8 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-header">
-        <h1>水产养殖管理系统</h1>
-        <p>Aquaculture Management System</p>
+        <h1>水产养殖计划与产量统计系统</h1>
+        <p>Aquaculture Plan & Production Statistics System</p>
       </div>
       <el-form
         ref="loginFormRef"

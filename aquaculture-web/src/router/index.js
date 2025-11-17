@@ -7,13 +7,13 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue'),
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: false, title: '用户登录' }
   },
   {
     path: '/register',
     name: 'Register',
     component: () => import('@/views/Register.vue'),
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: false, title: '用户注册' }
   },
   {
     path: '/',
@@ -142,6 +142,11 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   
+  // 设置动态页面标题
+  const defaultTitle = '水产养殖计划与产量统计系统'
+  const pageTitle = to.meta.title || defaultTitle
+  document.title = pageTitle ? `${pageTitle} - ${defaultTitle}` : defaultTitle
+  
   // 检查是否需要认证
   if (to.meta.requiresAuth && !userStore.token) {
     next('/login')
@@ -181,6 +186,13 @@ router.beforeEach((to, from, next) => {
   }
   
   next()
+})
+
+// 路由后置守卫 - 确保标题更新
+router.afterEach((to) => {
+  const defaultTitle = '水产养殖计划与产量统计系统'
+  const pageTitle = to.meta.title || defaultTitle
+  document.title = pageTitle ? `${pageTitle} - ${defaultTitle}` : defaultTitle
 })
 
 export default router

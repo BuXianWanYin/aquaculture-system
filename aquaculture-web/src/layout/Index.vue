@@ -2,7 +2,7 @@
   <el-container class="layout-container">
     <el-aside width="200px" class="sidebar">
       <div class="logo">
-        <h2>水产养殖系统</h2>
+        <h6>水产养殖计划与产量统计系统</h6>
       </div>
       <el-menu
         :default-active="activeMenu"

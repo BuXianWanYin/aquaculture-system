@@ -706,7 +706,7 @@
             <div class="info-row">
               <div class="info-item-inline">
                 <span class="info-label">系统名称：</span>
-                <span class="info-value">水产养殖管理系统</span>
+                <span class="info-value">水产养殖计划与产量统计系统</span>
               </div>
               <div class="info-item-inline">
                 <span class="info-label">当前用户：</span>

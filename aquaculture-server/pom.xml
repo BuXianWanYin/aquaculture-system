@@ -16,7 +16,7 @@
     <artifactId>aquaculture-server</artifactId>
     <version>1.0.0</version>
     <name>aquaculture-server</name>
-    <description>水产养殖管理系统后端服务</description>
+    <description>水产养殖计划与产量统计系统后端服务</description>
     
     <properties>
         <java.version>1.8</java.version>
