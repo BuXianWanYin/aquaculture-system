@@ -22,13 +22,14 @@ public class BaseDepartmentController {
     private BaseDepartmentService departmentService;
     
     /**
-     * 查询所有部门
+     * 查询所有部门（需要登录，根据角色过滤）
      */
     @GetMapping("/all")
     public Result<List<BaseDepartment>> getAllDepartments() {
         List<BaseDepartment> departments = departmentService.getAllDepartments();
         return Result.success(departments);
     }
+    
     
     /**
      * 分页查询部门列表

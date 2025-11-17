@@ -3,11 +3,16 @@ package com.server.aquacultureserver.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.aquacultureserver.domain.BaseDepartment;
+import com.server.aquacultureserver.domain.BaseArea;
+import com.server.aquacultureserver.domain.SysUser;
 import com.server.aquacultureserver.mapper.BaseDepartmentMapper;
+import com.server.aquacultureserver.mapper.BaseAreaMapper;
 import com.server.aquacultureserver.service.BaseDepartmentService;
+import com.server.aquacultureserver.utils.UserContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,9 +24,67 @@ public class BaseDepartmentServiceImpl implements BaseDepartmentService {
     @Autowired
     private BaseDepartmentMapper departmentMapper;
     
+    @Autowired
+    private BaseAreaMapper areaMapper;
+    
     @Override
     public List<BaseDepartment> getAllDepartments() {
         LambdaQueryWrapper<BaseDepartment> wrapper = new LambdaQueryWrapper<>();
+        
+        // 未登录用户（注册场景）可以查看所有部门
+        SysUser currentUser = UserContext.getCurrentUser();
+        if (currentUser == null) {
+            wrapper.eq(BaseDepartment::getStatus, 1)
+                   .orderByDesc(BaseDepartment::getCreateTime);
+            return departmentMapper.selectList(wrapper);
+        }
+        
+        // 系统管理员可以查看所有部门
+        if (UserContext.isAdmin()) {
+            wrapper.eq(BaseDepartment::getStatus, 1)
+                   .orderByDesc(BaseDepartment::getCreateTime);
+            return departmentMapper.selectList(wrapper);
+        }
+        
+        // 部门管理员只能查看自己所在的部门
+        if (UserContext.isDepartmentManager()) {
+            if (currentUser.getDepartmentId() != null) {
+                wrapper.eq(BaseDepartment::getDepartmentId, currentUser.getDepartmentId())
+                       .eq(BaseDepartment::getStatus, 1)
+                       .orderByDesc(BaseDepartment::getCreateTime);
+                return departmentMapper.selectList(wrapper);
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        
+        // 普通操作员只能查看自己所属的部门
+        if (UserContext.isOperator()) {
+            Long departmentId = null;
+            
+            // 优先使用用户表的departmentId
+            if (currentUser.getDepartmentId() != null) {
+                departmentId = currentUser.getDepartmentId();
+            }
+            // 如果没有departmentId，通过areaId查找区域的departmentId
+            else if (currentUser.getAreaId() != null && areaMapper != null) {
+                BaseArea area = areaMapper.selectById(currentUser.getAreaId());
+                if (area != null && area.getDepartmentId() != null) {
+                    departmentId = area.getDepartmentId();
+                }
+            }
+            
+            if (departmentId != null) {
+                wrapper.eq(BaseDepartment::getDepartmentId, departmentId)
+                       .eq(BaseDepartment::getStatus, 1)
+                       .orderByDesc(BaseDepartment::getCreateTime);
+                return departmentMapper.selectList(wrapper);
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        
+        // 其他角色返回所有部门（兼容性处理）
         wrapper.eq(BaseDepartment::getStatus, 1)
                .orderByDesc(BaseDepartment::getCreateTime);
         return departmentMapper.selectList(wrapper);

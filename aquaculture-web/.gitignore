@@ -22,7 +22,9 @@ build/
 .env.local
 .env.*.local
 .env.production
-.env.development
+# .env.development
+# .env.example 应该被提交到仓库作为模板
+!.env.example
 
 # Cache
 .cache/

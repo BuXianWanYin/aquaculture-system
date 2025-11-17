@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -26,15 +25,7 @@ public class FeedInventoryServiceImpl implements FeedInventoryService {
     public List<FeedInventory> getAllInventories() {
         LambdaQueryWrapper<FeedInventory> wrapper = new LambdaQueryWrapper<>();
         
-        // 普通操作员只能查看自己创建的库存记录
-        if (UserContext.isOperator()) {
-            Long userId = UserContext.getCurrentUserId();
-            if (userId != null) {
-                wrapper.eq(FeedInventory::getCreatorId, userId);
-            } else {
-                return Collections.emptyList();
-            }
-        }
+        // 普通操作员和部门管理员都可以查看所有库存记录（采购和库存是公共资源）
         
         wrapper.eq(FeedInventory::getStatus, 1);
         wrapper.orderByDesc(FeedInventory::getCreateTime);
@@ -51,15 +42,7 @@ public class FeedInventoryServiceImpl implements FeedInventoryService {
         Page<FeedInventory> page = new Page<>(current, size);
         LambdaQueryWrapper<FeedInventory> wrapper = new LambdaQueryWrapper<>();
         
-        // 普通操作员只能查看自己创建的库存记录
-        if (UserContext.isOperator()) {
-            Long userId = UserContext.getCurrentUserId();
-            if (userId != null) {
-                wrapper.eq(FeedInventory::getCreatorId, userId);
-            } else {
-                return page;
-            }
-        }
+        // 普通操作员和部门管理员都可以查看所有库存记录（采购和库存是公共资源）
         
         if (feedName != null && !feedName.isEmpty()) {
             wrapper.like(FeedInventory::getFeedName, feedName);

@@ -2,9 +2,14 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 
+// 从环境变量获取配置，如果没有则使用默认值
+// Get configuration from environment variables, use defaults if not set
+const apiPrefix = import.meta.env.VITE_API_PREFIX || '/api'
+const requestTimeout = parseInt(import.meta.env.VITE_REQUEST_TIMEOUT || '10000', 10)
+
 const request = axios.create({
-  baseURL: '/api',
-  timeout: 10000
+  baseURL: apiPrefix,
+  timeout: requestTimeout
 })
 
 // 请求拦截器

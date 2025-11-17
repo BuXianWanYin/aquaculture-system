@@ -11,7 +11,7 @@ import java.util.List;
 public interface BaseDepartmentService {
     
     /**
-     * 查询所有部门
+     * 查询所有部门（如果已登录则根据角色过滤，未登录则返回所有部门）
      */
     List<BaseDepartment> getAllDepartments();
     

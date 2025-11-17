@@ -1,0 +1,836 @@
+# 水产养殖管理系统 - 后端项目
+
+## 项目简介
+
+水产养殖管理系统后端服务，基于 Spring Boot 2.7.18 构建的企业级应用。本项目采用 RESTful API 设计，提供完整的业务逻辑处理、数据持久化、权限控制、日志记录等功能。
+
+---
+
+## 技术栈
+
+### 核心框架
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| **Spring Boot** | 2.7.18 | 核心框架，提供自动配置和快速开发能力 |
+| **Java** | 1.8 | 开发语言 |
+| **Maven** | - | 项目构建和依赖管理工具 |
+
+### 数据持久层
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| **MyBatis Plus** | 3.5.3.1 | MyBatis 增强工具，简化 CRUD 操作 |
+| **MySQL** | 8.0.33 | 关系型数据库 |
+| **MySQL Connector** | 8.0.33 | MySQL JDBC 驱动 |
+
+### 缓存
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| **Redis** | - | 内存数据库，用于缓存和会话管理 |
+| **Jedis** | 3.8.0 | Redis Java 客户端 |
+
+### 工具库
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| **Lombok** | - | 通过注解简化 Java 代码（自动生成 getter/setter 等） |
+| **FastJSON** | 1.2.83 | 阿里巴巴 JSON 处理库 |
+| **Spring Validation** | - | 参数验证框架 |
+
+### 安全认证
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| **JWT (jjwt)** | 0.9.1 | JSON Web Token，用于用户身份认证和授权 |
+
+### 切面编程
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| **Spring AOP** | - | 面向切面编程，用于日志记录、权限控制等 |
+
+---
+
+## 项目结构
+
+```
+aquaculture-server/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/server/aquacultureserver/
+│   │   │       ├── annotation/          # 自定义注解
+│   │   │       │   └── RequiresPermission.java  # 权限控制注解
+│   │   │       ├── aspect/              # AOP 切面
+│   │   │       │   ├── OperLogAspect.java       # 操作日志切面
+│   │   │       │   └── PermissionAspect.java    # 权限检查切面
+│   │   │       ├── common/              # 通用类
+│   │   │       │   └── Result.java              # 统一响应结果类
+│   │   │       ├── config/              # 配置类
+│   │   │       │   ├── AuthInterceptor.java     # 认证拦截器
+│   │   │       │   ├── InterceptorConfig.java   # 拦截器配置
+│   │   │       │   ├── MyBatisPlusConfig.java   # MyBatis Plus 配置
+│   │   │       │   └── WebMvcConfig.java        # Web MVC 配置
+│   │   │       ├── constants/           # 常量定义
+│   │   │       │   └── RoleConstants.java       # 角色常量
+│   │   │       ├── controller/          # 控制器层（RESTful API）
+│   │   │       │   ├── SysUserController.java           # 用户管理控制器：处理用户登录、注册、增删改查等接口
+│   │   │       │   ├── SysRoleController.java           # 角色管理控制器：处理角色的增删改查和权限分配接口
+│   │   │       │   ├── SysPermissionController.java     # 权限管理控制器：处理权限的增删改查接口
+│   │   │       │   ├── BaseDepartmentController.java    # 部门管理控制器：处理部门的增删改查接口
+│   │   │       │   ├── BaseAreaController.java          # 区域管理控制器：处理养殖区域的增删改查接口
+│   │   │       │   ├── BaseBreedController.java         # 品种管理控制器：处理养殖品种的增删改查接口
+│   │   │       │   ├── BaseEquipmentController.java     # 设备管理控制器：处理设备的增删改查接口
+│   │   │       │   ├── AquaculturePlanController.java   # 养殖计划管理控制器：处理计划的录入、审批、查询等接口
+│   │   │       │   ├── PlanAdjustController.java        # 计划调整管理控制器：处理计划调整的增删改查接口
+│   │   │       │   ├── YieldStatisticsController.java   # 产量统计管理控制器：处理产量录入、统计、审核等接口
+│   │   │       │   ├── YieldEvidenceController.java     # 产量凭证管理控制器：处理产量凭证的上传、删除等接口
+│   │   │       │   ├── StatisticResultController.java   # 统计分析结果控制器：处理统计结果查询接口
+│   │   │       │   ├── DashboardController.java         # 仪表盘控制器：处理仪表盘数据查询接口
+│   │   │       │   ├── DailyInspectionController.java   # 日常巡检控制器：处理日常巡检记录的增删改查接口
+│   │   │       │   ├── FeedingRecordController.java     # 投喂记录控制器：处理投喂记录的增删改查接口
+│   │   │       │   ├── FeedInventoryController.java     # 饲料库存控制器：处理饲料库存的增删改查接口
+│   │   │       │   ├── FeedPurchaseController.java      # 饲料采购控制器：处理饲料采购记录的增删改查接口
+│   │   │       │   ├── FeedUsageController.java         # 饲料使用控制器：处理饲料使用记录的增删改查接口
+│   │   │       │   ├── DiseaseRecordController.java     # 病害记录控制器：处理病害记录的增删改查接口
+│   │   │       │   ├── DiseasePreventionController.java # 病害预防控制器：处理病害预防措施的增删改查接口
+│   │   │       │   ├── MedicineUsageController.java     # 用药记录控制器：处理用药记录的增删改查接口
+│   │   │       │   ├── CustomerController.java          # 客户管理控制器：处理客户信息的增删改查接口
+│   │   │       │   ├── SalesRecordController.java       # 销售记录控制器：处理销售记录的增删改查接口
+│   │   │       │   ├── SysMessageController.java        # 消息通知控制器：处理消息的发送、查询、标记已读等接口
+│   │   │       │   ├── SysOperLogController.java        # 操作日志控制器：处理操作日志的查询接口
+│   │   │       │   └── FileUploadController.java        # 文件上传控制器：处理文件上传接口（头像、凭证等）
+│   │   │       ├── domain/              # 实体类（对应数据库表）
+│   │   │       │   ├── SysUser.java                     # 用户实体类：对应 sys_user 表，存储用户基本信息
+│   │   │       │   ├── SysRole.java                     # 角色实体类：对应 sys_role 表，存储角色信息
+│   │   │       │   ├── SysPermission.java               # 权限实体类：对应 sys_permission 表，存储权限信息
+│   │   │       │   ├── SysRolePermission.java           # 角色权限关联实体类：对应 sys_role_permission 表
+│   │   │       │   ├── BaseDepartment.java              # 部门实体类：对应 base_department 表，存储部门信息
+│   │   │       │   ├── BaseArea.java                    # 区域实体类：对应 base_area 表，存储养殖区域信息
+│   │   │       │   ├── BaseBreed.java                   # 品种实体类：对应 base_breed 表，存储养殖品种信息
+│   │   │       │   ├── BaseEquipment.java               # 设备实体类：对应 base_equipment 表，存储设备信息
+│   │   │       │   ├── AquaculturePlan.java             # 养殖计划实体类：对应 aquaculture_plan 表，存储计划信息
+│   │   │       │   ├── PlanAdjust.java                  # 计划调整实体类：对应 plan_adjust 表，存储计划调整记录
+│   │   │       │   ├── YieldStatistics.java             # 产量统计实体类：对应 yield_statistics 表，存储产量统计信息
+│   │   │       │   ├── YieldEvidence.java               # 产量凭证实体类：对应 yield_evidence 表，存储产量凭证信息
+│   │   │       │   ├── StatisticResult.java             # 统计结果实体类：对应 statistic_result 表，存储统计结果
+│   │   │       │   ├── DailyInspection.java             # 日常巡检实体类：对应 daily_inspection 表，存储巡检记录
+│   │   │       │   ├── FeedingRecord.java               # 投喂记录实体类：对应 feeding_record 表，存储投喂记录
+│   │   │       │   ├── FeedInventory.java               # 饲料库存实体类：对应 feed_inventory 表，存储饲料库存信息
+│   │   │       │   ├── FeedPurchase.java                # 饲料采购实体类：对应 feed_purchase 表，存储采购记录
+│   │   │       │   ├── FeedUsage.java                   # 饲料使用实体类：对应 feed_usage 表，存储使用记录
+│   │   │       │   ├── DiseaseRecord.java               # 病害记录实体类：对应 disease_record 表，存储病害记录
+│   │   │       │   ├── DiseasePrevention.java           # 病害预防实体类：对应 disease_prevention 表，存储预防措施
+│   │   │       │   ├── MedicineUsage.java               # 用药记录实体类：对应 medicine_usage 表，存储用药记录
+│   │   │       │   ├── Customer.java                    # 客户实体类：对应 customer 表，存储客户信息
+│   │   │       │   ├── SalesRecord.java                 # 销售记录实体类：对应 sales_record 表，存储销售记录
+│   │   │       │   ├── SysMessage.java                  # 消息实体类：对应 sys_message 表，存储消息通知信息
+│   │   │       │   └── SysOperLog.java                  # 操作日志实体类：对应 sys_oper_log 表，存储操作日志
+│   │   │       ├── dto/                 # 数据传输对象
+│   │   │       │   ├── LoginDTO.java                    # 登录请求 DTO：接收前端登录请求数据（用户名、密码）
+│   │   │       │   ├── UserDTO.java                     # 用户信息 DTO：返回给前端的用户信息（包含权限列表）
+│   │   │       │   └── AssignPermissionDTO.java         # 权限分配 DTO：用于角色权限分配的数据传输
+│   │   │       ├── mapper/              # MyBatis Mapper 接口
+│   │   │       │   ├── SysUserMapper.java               # 用户 Mapper 接口：用户数据访问层
+│   │   │       │   ├── SysRoleMapper.java               # 角色 Mapper 接口：角色数据访问层
+│   │   │       │   ├── SysPermissionMapper.java         # 权限 Mapper 接口：权限数据访问层
+│   │   │       │   ├── SysRolePermissionMapper.java     # 角色权限关联 Mapper 接口：角色权限关联数据访问层
+│   │   │       │   ├── BaseDepartmentMapper.java        # 部门 Mapper 接口：部门数据访问层
+│   │   │       │   ├── BaseAreaMapper.java              # 区域 Mapper 接口：区域数据访问层
+│   │   │       │   ├── BaseBreedMapper.java             # 品种 Mapper 接口：品种数据访问层
+│   │   │       │   ├── BaseEquipmentMapper.java         # 设备 Mapper 接口：设备数据访问层
+│   │   │       │   ├── AquaculturePlanMapper.java       # 养殖计划 Mapper 接口：计划数据访问层
+│   │   │       │   ├── PlanAdjustMapper.java            # 计划调整 Mapper 接口：计划调整数据访问层
+│   │   │       │   ├── YieldStatisticsMapper.java       # 产量统计 Mapper 接口：产量统计数据访问层
+│   │   │       │   ├── YieldEvidenceMapper.java         # 产量凭证 Mapper 接口：产量凭证数据访问层
+│   │   │       │   ├── StatisticResultMapper.java       # 统计结果 Mapper 接口：统计结果数据访问层
+│   │   │       │   ├── DailyInspectionMapper.java       # 日常巡检 Mapper 接口：巡检记录数据访问层
+│   │   │       │   ├── FeedingRecordMapper.java         # 投喂记录 Mapper 接口：投喂记录数据访问层
+│   │   │       │   ├── FeedInventoryMapper.java         # 饲料库存 Mapper 接口：饲料库存数据访问层
+│   │   │       │   ├── FeedPurchaseMapper.java          # 饲料采购 Mapper 接口：饲料采购数据访问层
+│   │   │       │   ├── FeedUsageMapper.java             # 饲料使用 Mapper 接口：饲料使用数据访问层
+│   │   │       │   ├── DiseaseRecordMapper.java         # 病害记录 Mapper 接口：病害记录数据访问层
+│   │   │       │   ├── DiseasePreventionMapper.java     # 病害预防 Mapper 接口：病害预防数据访问层
+│   │   │       │   ├── MedicineUsageMapper.java         # 用药记录 Mapper 接口：用药记录数据访问层
+│   │   │       │   ├── CustomerMapper.java              # 客户 Mapper 接口：客户数据访问层
+│   │   │       │   ├── SalesRecordMapper.java           # 销售记录 Mapper 接口：销售记录数据访问层
+│   │   │       │   ├── SysMessageMapper.java            # 消息 Mapper 接口：消息数据访问层
+│   │   │       │   └── SysOperLogMapper.java            # 操作日志 Mapper 接口：操作日志数据访问层
+│   │   │       ├── service/             # 服务层接口
+│   │   │       │   ├── SysUserService.java              # 用户服务接口：定义用户业务逻辑方法
+│   │   │       │   ├── SysRoleService.java              # 角色服务接口：定义角色业务逻辑方法
+│   │   │       │   ├── SysPermissionService.java        # 权限服务接口：定义权限业务逻辑方法
+│   │   │       │   ├── BaseDepartmentService.java       # 部门服务接口：定义部门业务逻辑方法
+│   │   │       │   ├── BaseAreaService.java             # 区域服务接口：定义区域业务逻辑方法
+│   │   │       │   ├── BaseBreedService.java            # 品种服务接口：定义品种业务逻辑方法
+│   │   │       │   ├── BaseEquipmentService.java        # 设备服务接口：定义设备业务逻辑方法
+│   │   │       │   ├── AquaculturePlanService.java      # 养殖计划服务接口：定义计划业务逻辑方法
+│   │   │       │   ├── PlanAdjustService.java           # 计划调整服务接口：定义计划调整业务逻辑方法
+│   │   │       │   ├── YieldStatisticsService.java      # 产量统计服务接口：定义产量统计业务逻辑方法
+│   │   │       │   ├── YieldEvidenceService.java        # 产量凭证服务接口：定义产量凭证业务逻辑方法
+│   │   │       │   ├── StatisticResultService.java      # 统计结果服务接口：定义统计结果业务逻辑方法
+│   │   │       │   ├── DailyInspectionService.java      # 日常巡检服务接口：定义巡检业务逻辑方法
+│   │   │       │   ├── FeedingRecordService.java        # 投喂记录服务接口：定义投喂记录业务逻辑方法
+│   │   │       │   ├── FeedInventoryService.java        # 饲料库存服务接口：定义饲料库存业务逻辑方法
+│   │   │       │   ├── FeedPurchaseService.java         # 饲料采购服务接口：定义饲料采购业务逻辑方法
+│   │   │       │   ├── FeedUsageService.java            # 饲料使用服务接口：定义饲料使用业务逻辑方法
+│   │   │       │   ├── DiseaseRecordService.java        # 病害记录服务接口：定义病害记录业务逻辑方法
+│   │   │       │   ├── DiseasePreventionService.java    # 病害预防服务接口：定义病害预防业务逻辑方法
+│   │   │       │   ├── MedicineUsageService.java        # 用药记录服务接口：定义用药记录业务逻辑方法
+│   │   │       │   ├── CustomerService.java             # 客户服务接口：定义客户业务逻辑方法
+│   │   │       │   ├── SalesRecordService.java          # 销售记录服务接口：定义销售记录业务逻辑方法
+│   │   │       │   ├── SysMessageService.java           # 消息服务接口：定义消息业务逻辑方法
+│   │   │       │   └── SysOperLogService.java           # 操作日志服务接口：定义操作日志业务逻辑方法
+│   │   │       │   └── impl/            # 服务层实现
+│   │   │       │       ├── SysUserServiceImpl.java      # 用户服务实现类：实现用户业务逻辑
+│   │   │       │       ├── SysRoleServiceImpl.java      # 角色服务实现类：实现角色业务逻辑
+│   │   │       │       ├── SysPermissionServiceImpl.java # 权限服务实现类：实现权限业务逻辑
+│   │   │       │       ├── BaseDepartmentServiceImpl.java # 部门服务实现类：实现部门业务逻辑
+│   │   │       │       ├── BaseAreaServiceImpl.java     # 区域服务实现类：实现区域业务逻辑
+│   │   │       │       ├── BaseBreedServiceImpl.java    # 品种服务实现类：实现品种业务逻辑
+│   │   │       │       ├── BaseEquipmentServiceImpl.java # 设备服务实现类：实现设备业务逻辑
+│   │   │       │       ├── AquaculturePlanServiceImpl.java # 养殖计划服务实现类：实现计划业务逻辑
+│   │   │       │       ├── PlanAdjustServiceImpl.java   # 计划调整服务实现类：实现计划调整业务逻辑
+│   │   │       │       ├── YieldStatisticsServiceImpl.java # 产量统计服务实现类：实现产量统计业务逻辑
+│   │   │       │       ├── YieldEvidenceServiceImpl.java # 产量凭证服务实现类：实现产量凭证业务逻辑
+│   │   │       │       ├── StatisticResultServiceImpl.java # 统计结果服务实现类：实现统计结果业务逻辑
+│   │   │       │       ├── DailyInspectionServiceImpl.java # 日常巡检服务实现类：实现巡检业务逻辑
+│   │   │       │       ├── FeedingRecordServiceImpl.java # 投喂记录服务实现类：实现投喂记录业务逻辑
+│   │   │       │       ├── FeedInventoryServiceImpl.java # 饲料库存服务实现类：实现饲料库存业务逻辑
+│   │   │       │       ├── FeedPurchaseServiceImpl.java # 饲料采购服务实现类：实现饲料采购业务逻辑
+│   │   │       │       ├── FeedUsageServiceImpl.java    # 饲料使用服务实现类：实现饲料使用业务逻辑
+│   │   │       │       ├── DiseaseRecordServiceImpl.java # 病害记录服务实现类：实现病害记录业务逻辑
+│   │   │       │       ├── DiseasePreventionServiceImpl.java # 病害预防服务实现类：实现病害预防业务逻辑
+│   │   │       │       ├── MedicineUsageServiceImpl.java # 用药记录服务实现类：实现用药记录业务逻辑
+│   │   │       │       ├── CustomerServiceImpl.java     # 客户服务实现类：实现客户业务逻辑
+│   │   │       │       ├── SalesRecordServiceImpl.java  # 销售记录服务实现类：实现销售记录业务逻辑
+│   │   │       │       ├── SysMessageServiceImpl.java   # 消息服务实现类：实现消息业务逻辑
+│   │   │       │       └── SysOperLogServiceImpl.java   # 操作日志服务实现类：实现操作日志业务逻辑
+│   │   │       └── utils/               # 工具类
+│   │   │           ├── JwtUtil.java            # JWT 工具类
+│   │   │           └── UserContext.java        # 用户上下文工具
+│   │   └── resources/
+│   │       ├── application.yml          # 应用配置文件
+│   │       └── mapper/                  # MyBatis XML 映射文件（可选）
+│   └── test/                            # 测试代码
+│       └── java/
+└── pom.xml                              # Maven 配置文件
+```
+
+---
+
+## 核心功能模块
+
+### 1. 用户与权限管理模块
+- 用户注册、登录、认证
+- JWT Token 生成与验证
+- 基于角色的权限控制（RBAC）
+- 权限注解 `@RequiresPermission` 实现接口级权限控制
+
+### 2. 基础数据管理模块
+- 部门管理（BaseDepartment）
+- 区域管理（BaseArea）
+- 品种管理（BaseBreed）
+- 设备管理（BaseEquipment）
+
+### 3. 养殖计划管理模块
+- 计划录入、编辑、查询
+- 计划审批流程
+- 计划调整管理
+
+### 4. 产量统计管理模块
+- 产量录入与统计
+- 产量审核流程
+- 产量凭证管理
+
+### 5. 生产管理模块
+- 日常巡检记录
+- 投喂记录管理
+- 饲料库存、采购、使用管理
+
+### 6. 病害管理模块
+- 病害记录管理
+- 病害预防管理
+- 用药记录管理
+
+### 7. 销售管理模块
+- 客户信息管理
+- 销售记录管理
+
+### 8. 数据报表与分析模块
+- 多维度数据统计
+- 仪表盘数据接口
+- 统计分析结果查询
+
+### 9. 系统管理模块
+- 操作日志记录与查询
+- 消息通知管理
+- 文件上传管理
+
+---
+
+## 开发指南
+
+### 环境要求
+
+- **JDK**: 1.8 或更高版本
+- **Maven**: 3.6 或更高版本
+- **MySQL**: 8.0 或更高版本
+- **Redis**: 6.0 或更高版本（可选）
+
+### 数据库配置
+
+1. 创建数据库：
+```sql
+CREATE DATABASE aquaculture_management CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+2. 配置数据库连接（`application.yml`）：
+```yaml
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/aquaculture_management?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+```
+
+### Redis 配置
+
+```yaml
+spring:
+  redis:
+    host: localhost
+    port: 6379
+    password: 
+    database: 0
+    jedis:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+```
+
+### 运行项目
+
+#### 方式一：使用 Maven
+
+```bash
+# 编译项目
+mvn clean compile
+
+# 运行项目
+mvn spring-boot:run
+```
+
+#### 方式二：使用 IDE
+
+1. 导入项目到 IntelliJ IDEA 或 Eclipse
+2. 等待 Maven 依赖下载完成
+3. 运行 `AquacultureServerApplication` 主类
+
+#### 方式三：打包运行
+
+```bash
+# 打包项目
+mvn clean package
+
+# 运行 JAR 包
+java -jar target/aquaculture-server-1.0.0.jar
+```
+
+### 默认端口
+
+- 服务端口：**8080**
+- 访问地址：http://localhost:8080
+
+---
+
+## 配置文件说明
+
+### application.yml
+
+```yaml
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/aquaculture_management?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+  
+  redis:
+    host: localhost
+    port: 6379
+    password: 
+    database: 0
+
+# MyBatis Plus 配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.server.aquacultureserver.domain
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# JWT 配置
+jwt:
+  secret: aquaculture-system-secret-key-2024-very-long-secret-key-for-security
+  expiration: 86400000  # Token 过期时间（毫秒），默认 24 小时
+
+# 文件上传配置
+file:
+  upload:
+    path: ./uploads  # 文件上传路径
+```
+
+---
+
+## 核心代码说明
+
+### 统一响应结果类 (common/Result.java)
+
+```java
+@Data
+public class Result<T> {
+    private Integer code;
+    private String message;
+    private T data;
+    
+    public static <T> Result<T> success(T data) {
+        Result<T> result = new Result<>();
+        result.setCode(200);
+        result.setMessage("操作成功");
+        result.setData(data);
+        return result;
+    }
+    
+    public static <T> Result<T> error(String message) {
+        Result<T> result = new Result<>();
+        result.setCode(500);
+        result.setMessage(message);
+        return result;
+    }
+}
+```
+
+### 权限控制注解 (annotation/RequiresPermission.java)
+
+```java
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface RequiresPermission {
+    String[] value();
+}
+```
+
+### 控制器示例 (controller/SysUserController.java)
+
+```java
+@RestController
+@RequestMapping("/api/user")
+@CrossOrigin
+public class SysUserController {
+    
+    @Autowired
+    private SysUserService userService;
+    
+    @PostMapping("/login")
+    public Result<UserDTO> login(@RequestBody LoginDTO loginDTO) {
+        UserDTO userDTO = userService.login(loginDTO);
+        return Result.success("登录成功", userDTO);
+    }
+    
+    @GetMapping("/page")
+    @RequiresPermission({"system:user:view"})
+    public Result<Page<SysUser>> getPage(
+            @RequestParam(defaultValue = "1") Integer current,
+            @RequestParam(defaultValue = "10") Integer size) {
+        Page<SysUser> page = userService.getPage(current, size, null, null);
+        return Result.success(page);
+    }
+}
+```
+
+### JWT 工具类 (utils/JwtUtil.java)
+
+```java
+public class JwtUtil {
+    private static final String SECRET = "your-secret-key";
+    private static final long EXPIRATION = 86400000L; // 24小时
+    
+    // 生成 Token
+    public static String generateToken(Long userId, Long roleId) {
+        return Jwts.builder()
+            .setSubject(userId.toString())
+            .claim("roleId", roleId)
+            .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+            .signWith(SignatureAlgorithm.HS512, SECRET)
+            .compact();
+    }
+    
+    // 解析 Token
+    public static Claims parseToken(String token) {
+        return Jwts.parser()
+            .setSigningKey(SECRET)
+            .parseClaimsJws(token)
+            .getBody();
+    }
+}
+```
+
+### 操作日志切面 (aspect/OperLogAspect.java)
+
+使用 AOP 自动记录操作日志：
+
+```java
+@Aspect
+@Component
+public class OperLogAspect {
+    
+    @Autowired
+    private SysOperLogService operLogService;
+    
+    @Around("@annotation(operLog)")
+    public Object around(ProceedingJoinPoint joinPoint, OperLog operLog) {
+        // 记录操作日志
+        // ...
+    }
+}
+```
+
+---
+
+## API 接口规范
+
+### 接口路径规范
+
+- 所有 API 接口以 `/api` 开头
+- RESTful 风格 URL 设计
+- 使用标准的 HTTP 方法（GET、POST、PUT、DELETE）
+
+### 响应格式规范
+
+所有接口统一返回 `Result<T>` 格式：
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    // 响应数据
+  }
+}
+```
+
+### 错误码说明
+
+- `200`: 成功
+- `401`: 未授权（Token 无效或过期）
+- `403`: 拒绝访问（权限不足）
+- `404`: 资源不存在
+- `500`: 服务器错误
+
+### 接口认证
+
+需要在请求头中添加 JWT Token：
+
+```
+Authorization: Bearer <token>
+```
+
+### 接口示例
+
+#### 用户登录
+
+```
+POST /api/user/login
+Content-Type: application/json
+
+Request:
+{
+  "username": "admin",
+  "password": "123456"
+}
+
+Response:
+{
+  "code": 200,
+  "message": "登录成功",
+  "data": {
+    "userId": 1,
+    "username": "admin",
+    "roleId": 1,
+    "token": "eyJhbGciOiJIUzUxMiJ9..."
+  }
+}
+```
+
+#### 分页查询用户列表
+
+```
+GET /api/user/page?current=1&size=10&username=admin
+Authorization: Bearer <token>
+
+Response:
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "records": [...],
+    "total": 100,
+    "current": 1,
+    "size": 10
+  }
+}
+```
+
+---
+
+## 权限控制
+
+### 权限代码格式
+
+- 格式：`模块:操作` 或 `模块:子模块:操作`
+- 示例：
+  - `system:user:view` - 系统管理-用户-查看
+  - `plan:add` - 计划-新增
+  - `yield:evidence:delete` - 产量-凭证-删除
+
+### 使用权限注解
+
+```java
+@GetMapping("/page")
+@RequiresPermission({"system:user:view"})
+public Result<Page<SysUser>> getPage(...) {
+    // ...
+}
+
+@PostMapping
+@RequiresPermission({"system:user:add"})
+public Result<Boolean> saveUser(...) {
+    // ...
+}
+```
+
+### 权限验证流程
+
+1. 请求到达 `AuthInterceptor` 拦截器
+2. 从 JWT Token 中解析用户信息
+3. 查询用户角色对应的权限列表
+4. `PermissionAspect` 检查方法上的 `@RequiresPermission` 注解
+5. 验证用户是否拥有所需权限
+6. 通过则继续执行，否则返回 403
+
+---
+
+## 开发规范
+
+### 包命名规范
+
+- Controller: `com.server.aquacultureserver.controller`
+- Service: `com.server.aquacultureserver.service`
+- Mapper: `com.server.aquacultureserver.mapper`
+- Domain: `com.server.aquacultureserver.domain`
+
+### 类命名规范
+
+- Controller: `*Controller`
+- Service: `*Service` / `*ServiceImpl`
+- Mapper: `*Mapper`
+- Domain: 实体类名（如 `SysUser`）
+
+### 接口设计规范
+
+- 统一返回格式: `Result<T>`
+- RESTful 风格 URL
+- 统一异常处理
+- 使用 `@CrossOrigin` 允许跨域（开发环境）
+
+### 代码规范
+
+- 使用 Lombok 简化代码
+- 统一使用 MyBatis Plus 进行数据库操作
+- 使用 AOP 记录操作日志
+- 参数验证使用 `@Valid` 注解
+
+---
+
+## MyBatis Plus 使用
+
+### 实体类配置
+
+```java
+@Data
+@TableName("sys_user")
+public class SysUser {
+    @TableId(type = IdType.AUTO)
+    private Long userId;
+    
+    private String username;
+    private String password;
+    private Long roleId;
+    // ...
+}
+```
+
+### Service 层使用
+
+```java
+@Service
+public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements SysUserService {
+    
+    public Page<SysUser> getPage(Integer current, Integer size, String username, Long roleId) {
+        Page<SysUser> page = new Page<>(current, size);
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
+        if (username != null) {
+            wrapper.like(SysUser::getUsername, username);
+        }
+        if (roleId != null) {
+            wrapper.eq(SysUser::getRoleId, roleId);
+        }
+        return this.page(page, wrapper);
+    }
+}
+```
+
+---
+
+## 依赖清单
+
+### 核心依赖
+
+```xml
+<!-- Spring Boot Web -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+
+<!-- MyBatis Plus -->
+<dependency>
+    <groupId>com.baomidou</groupId>
+    <artifactId>mybatis-plus-boot-starter</artifactId>
+    <version>3.5.3.1</version>
+</dependency>
+
+<!-- MySQL Driver -->
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.33</version>
+</dependency>
+
+<!-- Redis -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+<dependency>
+    <groupId>redis.clients</groupId>
+    <artifactId>jedis</artifactId>
+    <version>3.8.0</version>
+</dependency>
+
+<!-- Lombok -->
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+</dependency>
+
+<!-- FastJSON -->
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>fastjson</artifactId>
+    <version>1.2.83</version>
+</dependency>
+
+<!-- JWT -->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt</artifactId>
+    <version>0.9.1</version>
+</dependency>
+
+<!-- AOP -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-aop</artifactId>
+</dependency>
+
+<!-- Validation -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+```
+
+---
+
+## 部署说明
+
+### 打包项目
+
+```bash
+mvn clean package
+```
+
+### 运行 JAR 包
+
+```bash
+java -jar target/aquaculture-server-1.0.0.jar
+```
+
+### 生产环境配置
+
+1. 修改 `application.yml` 中的数据库连接信息
+2. 修改 JWT 密钥（`jwt.secret`）
+3. 配置文件上传路径
+4. 配置 Redis 连接（如果使用）
+
+### Docker 部署（可选）
+
+```dockerfile
+FROM openjdk:8-jre-slim
+COPY target/aquaculture-server-1.0.0.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+---
+
+## 常见问题
+
+### 1. 数据库连接失败
+
+检查数据库配置、用户名密码、数据库是否已创建。
+
+### 2. JWT Token 无效
+
+检查 Token 是否过期，密钥是否正确。
+
+### 3. 权限验证失败
+
+检查用户角色是否有对应权限，权限代码是否正确。
+
+### 4. 跨域问题
+
+开发环境已配置 `@CrossOrigin`，生产环境需要在 Nginx 配置 CORS。
+
+---
+
+## 参考资料
+
+- [Spring Boot 官方文档](https://spring.io/projects/spring-boot)
+- [MyBatis Plus 官方文档](https://baomidou.com/)
+- [JWT 官方文档](https://jwt.io/)
+- [MySQL 官方文档](https://dev.mysql.com/doc/)
+
+---
+
+*文档更新时间: 2024年*
+
