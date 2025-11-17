@@ -29,6 +29,10 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     @Autowired
     private SysRolePermissionMapper rolePermissionMapper;
     
+    /**
+     * 查询所有权限
+     * @return 权限列表（按排序顺序和权限ID升序）
+     */
     @Override
     public List<SysPermission> getAllPermissions() {
         return permissionMapper.selectList(
@@ -38,6 +42,14 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         );
     }
     
+    /**
+     * 分页查询权限列表
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param module 模块名称（精确查询）
+     * @param keyword 关键词（模糊查询权限名称或权限标识）
+     * @return 分页结果
+     */
     @Override
     public Page<SysPermission> getPage(Integer current, Integer size, String module, String keyword) {
         Page<SysPermission> page = new Page<>(current, size);
@@ -58,11 +70,21 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         return permissionMapper.selectPage(page, wrapper);
     }
     
+    /**
+     * 根据ID查询权限
+     * @param permissionId 权限ID
+     * @return 权限信息
+     */
     @Override
     public SysPermission getById(Long permissionId) {
         return permissionMapper.selectById(permissionId);
     }
     
+    /**
+     * 根据模块名称查询权限列表
+     * @param module 模块名称
+     * @return 权限列表（按排序顺序）
+     */
     @Override
     public List<SysPermission> getByModule(String module) {
         return permissionMapper.selectList(
@@ -72,6 +94,11 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         );
     }
     
+    /**
+     * 根据父权限ID查询子权限列表
+     * @param parentId 父权限ID
+     * @return 子权限列表（按排序顺序）
+     */
     @Override
     public List<SysPermission> getByParentId(Long parentId) {
         return permissionMapper.selectList(
@@ -81,6 +108,12 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         );
     }
     
+    /**
+     * 新增权限
+     * 会检查权限标识是否已存在
+     * @param permission 权限信息
+     * @return 是否成功
+     */
     @Override
     public boolean savePermission(SysPermission permission) {
         // 检查权限标识是否已存在
@@ -100,6 +133,12 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         return permissionMapper.insert(permission) > 0;
     }
     
+    /**
+     * 更新权限信息
+     * 如果更新了权限标识，会检查是否与其他权限重复
+     * @param permission 权限信息
+     * @return 是否成功
+     */
     @Override
     public boolean updatePermission(SysPermission permission) {
         // 如果更新了权限标识，检查是否重复
@@ -116,6 +155,12 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         return permissionMapper.updateById(permission) > 0;
     }
     
+    /**
+     * 删除权限（物理删除）
+     * 删除前会检查是否有子权限，并同时删除角色权限关联
+     * @param permissionId 权限ID
+     * @return 是否成功
+     */
     @Override
     @Transactional
     public boolean deletePermission(Long permissionId) {
@@ -134,6 +179,11 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         return permissionMapper.deleteById(permissionId) > 0;
     }
     
+    /**
+     * 根据角色ID查询权限列表
+     * @param roleId 角色ID
+     * @return 权限列表
+     */
     @Override
     public List<SysPermission> getPermissionsByRoleId(Long roleId) {
         // 查询角色关联的权限ID列表
@@ -155,6 +205,13 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         return permissionMapper.selectBatchIds(permissionIds);
     }
     
+    /**
+     * 为角色分配权限
+     * 会自动添加选中权限的所有父权限，确保权限树结构的完整性
+     * @param roleId 角色ID
+     * @param permissionIds 权限ID数组
+     * @return 是否成功
+     */
     @Override
     @Transactional
     public boolean assignPermissionsToRole(Long roleId, Long[] permissionIds) {
@@ -195,6 +252,9 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     
     /**
      * 递归添加父权限
+     * 用于确保权限树结构的完整性，当分配子权限时自动添加其所有父权限
+     * @param parentId 父权限ID
+     * @param allPermissionIds 所有权限ID集合
      */
     private void addParentPermissions(Long parentId, Set<Long> allPermissionIds) {
         if (parentId == null || parentId == 0) {
@@ -216,6 +276,11 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         }
     }
     
+    /**
+     * 移除角色的所有权限
+     * @param roleId 角色ID
+     * @return 是否成功
+     */
     @Override
     @Transactional
     public boolean removeAllPermissionsFromRole(Long roleId) {

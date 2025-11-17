@@ -27,6 +27,15 @@ public class BaseDepartmentServiceImpl implements BaseDepartmentService {
     @Autowired
     private BaseAreaMapper areaMapper;
     
+    /**
+     * 查询所有有效的部门信息
+     * 根据用户角色进行权限过滤：
+     * - 未登录用户（注册场景）：可以查看所有部门
+     * - 系统管理员：可以查看所有部门
+     * - 部门管理员：只能查看自己所在的部门
+     * - 普通操作员：只能查看自己所属的部门（优先使用用户表的departmentId，如果没有则通过areaId查找）
+     * @return 部门信息列表
+     */
     @Override
     public List<BaseDepartment> getAllDepartments() {
         LambdaQueryWrapper<BaseDepartment> wrapper = new LambdaQueryWrapper<>();
@@ -90,27 +99,49 @@ public class BaseDepartmentServiceImpl implements BaseDepartmentService {
         return departmentMapper.selectList(wrapper);
     }
     
+    /**
+     * 根据ID查询部门信息
+     * @param departmentId 部门ID
+     * @return 部门信息
+     */
     @Override
     public BaseDepartment getById(Long departmentId) {
         return departmentMapper.selectById(departmentId);
     }
     
+    /**
+     * 分页查询部门信息
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param departmentName 部门名称（模糊查询）
+     * @param status 状态（1-启用，0-禁用）
+     * @return 分页结果
+     */
     @Override
     public Page<BaseDepartment> getPage(Integer current, Integer size, String departmentName, Integer status) {
         Page<BaseDepartment> page = new Page<>(current, size);
         LambdaQueryWrapper<BaseDepartment> wrapper = new LambdaQueryWrapper<>();
         
+        // 部门名称模糊查询
         if (departmentName != null && !departmentName.isEmpty()) {
             wrapper.like(BaseDepartment::getDepartmentName, departmentName);
         }
+        // 状态查询
         if (status != null) {
             wrapper.eq(BaseDepartment::getStatus, status);
         }
         
+        // 按创建时间倒序排列
         wrapper.orderByDesc(BaseDepartment::getCreateTime);
         return departmentMapper.selectPage(page, wrapper);
     }
     
+    /**
+     * 新增部门信息
+     * 会检查部门编号是否已存在
+     * @param department 部门信息
+     * @return 是否成功
+     */
     @Override
     public boolean saveDepartment(BaseDepartment department) {
         // 检查部门编号是否已存在
@@ -121,12 +152,19 @@ public class BaseDepartmentServiceImpl implements BaseDepartmentService {
             throw new RuntimeException("部门编号已存在");
         }
         
+        // 默认状态为启用（1）
         if (department.getStatus() == null) {
-            department.setStatus(1); // 默认启用
+            department.setStatus(1);
         }
         return departmentMapper.insert(department) > 0;
     }
     
+    /**
+     * 更新部门信息
+     * 会检查部门编号是否与其他部门重复
+     * @param department 部门信息
+     * @return 是否成功
+     */
     @Override
     public boolean updateDepartment(BaseDepartment department) {
         // 检查部门编号是否与其他部门重复
@@ -140,6 +178,12 @@ public class BaseDepartmentServiceImpl implements BaseDepartmentService {
         return departmentMapper.updateById(department) > 0;
     }
     
+    /**
+     * 删除部门（物理删除）
+     * 注意：删除前应检查是否有区域关联此部门
+     * @param departmentId 部门ID
+     * @return 是否成功
+     */
     @Override
     public boolean deleteDepartment(Long departmentId) {
         // 检查是否有区域关联此部门

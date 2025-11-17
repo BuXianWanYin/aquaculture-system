@@ -22,6 +22,11 @@ public class DiseasePreventionServiceImpl implements DiseasePreventionService {
     @Autowired
     private DiseasePreventionMapper preventionMapper;
     
+    /**
+     * 查询所有有效的病害防治记录
+     * 根据用户角色进行权限过滤
+     * @return 防治记录列表
+     */
     @Override
     public List<DiseasePrevention> getAllPreventions() {
         LambdaQueryWrapper<DiseasePrevention> wrapper = new LambdaQueryWrapper<>();
@@ -50,11 +55,27 @@ public class DiseasePreventionServiceImpl implements DiseasePreventionService {
         return preventionMapper.selectList(wrapper);
     }
     
+    /**
+     * 根据ID查询防治记录
+     * @param preventionId 防治记录ID
+     * @return 防治记录
+     */
     @Override
     public DiseasePrevention getById(Long preventionId) {
         return preventionMapper.selectById(preventionId);
     }
     
+    /**
+     * 分页查询病害防治记录
+     * 根据用户角色进行权限过滤
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param recordId 病害记录ID
+     * @param planId 养殖计划ID
+     * @param areaId 区域ID
+     * @param status 状态（1-正常，0-已删除）
+     * @return 分页结果
+     */
     @Override
     public Page<DiseasePrevention> getPage(Integer current, Integer size, Long recordId, Long planId, Long areaId, Integer status) {
         Page<DiseasePrevention> page = new Page<>(current, size);
@@ -98,6 +119,11 @@ public class DiseasePreventionServiceImpl implements DiseasePreventionService {
         return preventionMapper.selectPage(page, wrapper);
     }
     
+    /**
+     * 根据病害记录ID查询防治记录
+     * @param recordId 病害记录ID
+     * @return 防治记录列表
+     */
     @Override
     public List<DiseasePrevention> getByRecordId(Long recordId) {
         LambdaQueryWrapper<DiseasePrevention> wrapper = new LambdaQueryWrapper<>();
@@ -107,6 +133,12 @@ public class DiseasePreventionServiceImpl implements DiseasePreventionService {
         return preventionMapper.selectList(wrapper);
     }
     
+    /**
+     * 新增病害防治记录
+     * 根据用户角色进行权限控制
+     * @param prevention 防治记录
+     * @return 是否成功
+     */
     @Override
     public boolean savePrevention(DiseasePrevention prevention) {
         // 普通操作员只能创建自己区域的防治记录
@@ -144,11 +176,21 @@ public class DiseasePreventionServiceImpl implements DiseasePreventionService {
         return preventionMapper.insert(prevention) > 0;
     }
     
+    /**
+     * 更新病害防治记录
+     * @param prevention 防治记录
+     * @return 是否成功
+     */
     @Override
     public boolean updatePrevention(DiseasePrevention prevention) {
         return preventionMapper.updateById(prevention) > 0;
     }
     
+    /**
+     * 删除病害防治记录（软删除）
+     * @param preventionId 防治记录ID
+     * @return 是否成功
+     */
     @Override
     public boolean deletePrevention(Long preventionId) {
         // 软删除，将状态设置为0
@@ -160,6 +202,10 @@ public class DiseasePreventionServiceImpl implements DiseasePreventionService {
         return preventionMapper.updateById(prevention) > 0;
     }
     
+    /**
+     * 统计有效的病害防治记录数量
+     * @return 记录数量
+     */
     @Override
     public long count() {
         LambdaQueryWrapper<DiseasePrevention> wrapper = new LambdaQueryWrapper<>();

@@ -22,6 +22,11 @@ public class FeedingRecordServiceImpl implements FeedingRecordService {
     @Autowired
     private FeedingRecordMapper recordMapper;
     
+    /**
+     * 查询所有有效的投喂记录
+     * 根据用户角色进行权限过滤
+     * @return 投喂记录列表
+     */
     @Override
     public List<FeedingRecord> getAllRecords() {
         LambdaQueryWrapper<FeedingRecord> wrapper = new LambdaQueryWrapper<>();
@@ -50,11 +55,27 @@ public class FeedingRecordServiceImpl implements FeedingRecordService {
         return recordMapper.selectList(wrapper);
     }
     
+    /**
+     * 根据ID查询投喂记录
+     * @param recordId 投喂记录ID
+     * @return 投喂记录
+     */
     @Override
     public FeedingRecord getById(Long recordId) {
         return recordMapper.selectById(recordId);
     }
     
+    /**
+     * 分页查询投喂记录
+     * 根据用户角色进行权限过滤
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param planId 养殖计划ID
+     * @param areaId 区域ID
+     * @param feedName 饲料名称（模糊查询）
+     * @param status 状态（1-正常，0-已删除）
+     * @return 分页结果
+     */
     @Override
     public Page<FeedingRecord> getPage(Integer current, Integer size, Long planId, Long areaId, String feedName, Integer status) {
         Page<FeedingRecord> page = new Page<>(current, size);
@@ -98,6 +119,12 @@ public class FeedingRecordServiceImpl implements FeedingRecordService {
         return recordMapper.selectPage(page, wrapper);
     }
     
+    /**
+     * 新增投喂记录
+     * 根据用户角色进行权限控制
+     * @param record 投喂记录
+     * @return 是否成功
+     */
     @Override
     public boolean saveRecord(FeedingRecord record) {
         // 普通操作员只能创建自己区域的投喂记录
@@ -135,11 +162,21 @@ public class FeedingRecordServiceImpl implements FeedingRecordService {
         return recordMapper.insert(record) > 0;
     }
     
+    /**
+     * 更新投喂记录
+     * @param record 投喂记录
+     * @return 是否成功
+     */
     @Override
     public boolean updateRecord(FeedingRecord record) {
         return recordMapper.updateById(record) > 0;
     }
     
+    /**
+     * 删除投喂记录（软删除）
+     * @param recordId 投喂记录ID
+     * @return 是否成功
+     */
     @Override
     public boolean deleteRecord(Long recordId) {
         // 软删除，将状态设置为0
@@ -151,6 +188,10 @@ public class FeedingRecordServiceImpl implements FeedingRecordService {
         return recordMapper.updateById(record) > 0;
     }
     
+    /**
+     * 统计有效的投喂记录数量
+     * @return 记录数量
+     */
     @Override
     public long count() {
         LambdaQueryWrapper<FeedingRecord> wrapper = new LambdaQueryWrapper<>();

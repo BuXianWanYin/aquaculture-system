@@ -43,11 +43,20 @@ public class SysUserServiceImpl implements SysUserService {
     
     /**
      * 密码加密
+     * 使用MD5算法对密码进行加密
+     * @param password 原始密码
+     * @return 加密后的密码
      */
     private String encryptPassword(String password) {
         return DigestUtils.md5DigestAsHex(password.getBytes(StandardCharsets.UTF_8));
     }
     
+    /**
+     * 用户登录
+     * 验证用户名和密码，返回用户信息和JWT token
+     * @param loginDTO 登录信息（包含用户名和密码）
+     * @return 用户信息DTO（包含token、权限列表等）
+     */
     @Override
     public UserDTO login(LoginDTO loginDTO) {
         SysUser user = userMapper.selectOne(
@@ -102,11 +111,21 @@ public class SysUserServiceImpl implements SysUserService {
         return userDTO;
     }
     
+    /**
+     * 根据ID查询用户
+     * @param userId 用户ID
+     * @return 用户信息
+     */
     @Override
     public SysUser getById(Long userId) {
         return userMapper.selectById(userId);
     }
     
+    /**
+     * 根据用户名查询用户
+     * @param username 用户名
+     * @return 用户信息
+     */
     @Override
     public SysUser getByUsername(String username) {
         return userMapper.selectOne(
@@ -115,6 +134,15 @@ public class SysUserServiceImpl implements SysUserService {
         );
     }
     
+    /**
+     * 分页查询用户列表
+     * 根据用户角色进行权限过滤，查询结果会自动填充角色名称
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param username 用户名（模糊查询）
+     * @param roleId 角色ID
+     * @return 分页结果（包含角色名称）
+     */
     @Override
     public Page<SysUser> getPage(Integer current, Integer size, String username, Long roleId) {
         Page<SysUser> page = new Page<>(current, size);
@@ -169,6 +197,13 @@ public class SysUserServiceImpl implements SysUserService {
         return result;
     }
     
+    /**
+     * 新增用户
+     * 根据用户角色进行权限控制，自动加密密码
+     * 如果是注册（status未设置），默认状态为待审核（2）
+     * @param user 用户信息
+     * @return 是否成功
+     */
     @Override
     public boolean saveUser(SysUser user) {
         // 检查用户名是否已存在
@@ -213,6 +248,12 @@ public class SysUserServiceImpl implements SysUserService {
         return userMapper.insert(user) > 0;
     }
     
+    /**
+     * 更新用户信息
+     * 根据用户角色进行权限控制，如果更新了用户名会检查是否重复
+     * @param user 用户信息
+     * @return 是否成功
+     */
     @Override
     public boolean updateUser(SysUser user) {
         // 部门管理员权限检查：只能编辑本部门的操作员
@@ -260,6 +301,12 @@ public class SysUserServiceImpl implements SysUserService {
         return userMapper.updateById(user) > 0;
     }
     
+    /**
+     * 删除用户（物理删除）
+     * 根据用户角色进行权限控制
+     * @param userId 用户ID
+     * @return 是否成功
+     */
     @Override
     public boolean deleteUser(Long userId) {
         // 部门管理员权限检查：只能删除本部门的操作员
@@ -289,6 +336,14 @@ public class SysUserServiceImpl implements SysUserService {
         return userMapper.deleteById(userId) > 0;
     }
     
+    /**
+     * 修改密码
+     * 如果提供了原密码，会先验证原密码是否正确
+     * @param userId 用户ID
+     * @param oldPassword 原密码（可选）
+     * @param newPassword 新密码
+     * @return 是否成功
+     */
     @Override
     public boolean changePassword(Long userId, String oldPassword, String newPassword) {
         SysUser user = getById(userId);
@@ -305,10 +360,18 @@ public class SysUserServiceImpl implements SysUserService {
         }
         // 如果没有提供原密码，则跳过原密码验证（仅限修改自己的密码，已在Controller层验证）
         
+        // 加密新密码并更新
         user.setPassword(encryptPassword(newPassword));
         return userMapper.updateById(user) > 0;
     }
     
+    /**
+     * 重置密码
+     * 根据用户角色进行权限控制，不需要原密码验证
+     * @param userId 用户ID
+     * @param newPassword 新密码
+     * @return 是否成功
+     */
     @Override
     public boolean resetPassword(Long userId, String newPassword) {
         SysUser user = getById(userId);
@@ -334,15 +397,33 @@ public class SysUserServiceImpl implements SysUserService {
             }
         }
         
+        // 加密新密码并更新
         user.setPassword(encryptPassword(newPassword));
         return userMapper.updateById(user) > 0;
     }
     
+    /**
+     * 统计所有用户数量
+     * @return 用户数量
+     */
     @Override
     public long count() {
         return userMapper.selectCount(null);
     }
     
+    /**
+     * 审批用户注册申请
+     * 根据用户角色进行权限控制：
+     * - 部门管理员只能由系统管理员审批
+     * - 操作员可以由系统管理员或该部门的部门管理员审批
+     * 审核通过时会根据角色设置部门ID或区域ID
+     * @param userId 用户ID
+     * @param status 审批状态（1-通过，0-拒绝）
+     * @param departmentId 部门ID（审核通过时设置）
+     * @param areaId 区域ID（审核通过时设置，用于操作员）
+     * @param remark 备注
+     * @return 是否成功
+     */
     @Override
     public boolean approveUser(Long userId, Integer status, Long departmentId, Long areaId, String remark) {
         SysUser user = getById(userId);
@@ -415,6 +496,10 @@ public class SysUserServiceImpl implements SysUserService {
         return userMapper.updateById(user) > 0;
     }
     
+    /**
+     * 获取所有系统管理员的用户ID列表
+     * @return 系统管理员用户ID列表
+     */
     @Override
     public List<Long> getAllAdminUserIds() {
         List<SysUser> adminUsers = userMapper.selectList(
@@ -427,6 +512,11 @@ public class SysUserServiceImpl implements SysUserService {
             .collect(Collectors.toList());
     }
     
+    /**
+     * 查询待审核用户列表
+     * 根据用户角色进行权限过滤，查询结果会自动填充角色名称
+     * @return 待审核用户列表（包含角色名称）
+     */
     @Override
     public List<SysUser> getPendingUsers() {
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
@@ -466,6 +556,12 @@ public class SysUserServiceImpl implements SysUserService {
         return users;
     }
     
+    /**
+     * 获取用户列表（用于下拉选择）
+     * 根据用户角色进行权限过滤，只返回已启用的用户
+     * @param areaId 区域ID（可选，用于进一步过滤）
+     * @return 用户列表（只包含userId、username、realName、areaId字段）
+     */
     @Override
     public List<SysUser> getUserListForSelect(Long areaId) {
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();

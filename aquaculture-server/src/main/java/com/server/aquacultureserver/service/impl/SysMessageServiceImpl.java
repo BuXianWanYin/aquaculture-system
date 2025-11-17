@@ -25,6 +25,19 @@ public class SysMessageServiceImpl implements SysMessageService {
     @Autowired
     private SysUserMapper userMapper;
     
+    /**
+     * 分页查询接收人的消息列表
+     * 查询结果会自动填充发送人和接收人信息
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param receiverId 接收人ID（必填）
+     * @param messageType 消息类型
+     * @param status 状态（0-未读，1-已读）
+     * @param keyword 关键词（模糊查询标题或内容）
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 分页结果（包含发送人和接收人信息）
+     */
     @Override
     public Page<SysMessage> getPageByReceiver(Integer current, Integer size, 
                                                Long receiverId, 
@@ -87,6 +100,12 @@ public class SysMessageServiceImpl implements SysMessageService {
         return result;
     }
     
+    /**
+     * 根据ID查询消息
+     * 查询结果会自动填充发送人和接收人信息
+     * @param messageId 消息ID
+     * @return 消息（包含发送人和接收人信息）
+     */
     @Override
     public SysMessage getById(Long messageId) {
         SysMessage message = messageMapper.selectById(messageId);
@@ -111,6 +130,11 @@ public class SysMessageServiceImpl implements SysMessageService {
         return message;
     }
     
+    /**
+     * 发送消息
+     * @param message 消息
+     * @return 是否成功
+     */
     @Override
     public boolean sendMessage(SysMessage message) {
         if (message.getCreateTime() == null) {
@@ -122,6 +146,12 @@ public class SysMessageServiceImpl implements SysMessageService {
         return messageMapper.insert(message) > 0;
     }
     
+    /**
+     * 标记消息为已读
+     * @param messageId 消息ID
+     * @param receiverId 接收人ID
+     * @return 是否成功
+     */
     @Override
     public boolean markAsRead(Long messageId, Long receiverId) {
         SysMessage message = messageMapper.selectById(messageId);
@@ -141,6 +171,12 @@ public class SysMessageServiceImpl implements SysMessageService {
         return messageMapper.update(null, wrapper) > 0;
     }
     
+    /**
+     * 批量标记消息为已读
+     * @param messageIds 消息ID数组
+     * @param receiverId 接收人ID
+     * @return 是否成功
+     */
     @Override
     public boolean markBatchAsRead(Long[] messageIds, Long receiverId) {
         for (Long messageId : messageIds) {
@@ -149,6 +185,11 @@ public class SysMessageServiceImpl implements SysMessageService {
         return true;
     }
     
+    /**
+     * 标记所有消息为已读
+     * @param receiverId 接收人ID
+     * @return 是否成功
+     */
     @Override
     public boolean markAllAsRead(Long receiverId) {
         LambdaUpdateWrapper<SysMessage> wrapper = new LambdaUpdateWrapper<>();
@@ -160,6 +201,13 @@ public class SysMessageServiceImpl implements SysMessageService {
         return messageMapper.update(null, wrapper) > 0;
     }
     
+    /**
+     * 删除消息（物理删除）
+     * 只有接收人可以删除自己的消息
+     * @param messageId 消息ID
+     * @param receiverId 接收人ID
+     * @return 是否成功
+     */
     @Override
     public boolean deleteMessage(Long messageId, Long receiverId) {
         SysMessage message = messageMapper.selectById(messageId);
@@ -172,6 +220,12 @@ public class SysMessageServiceImpl implements SysMessageService {
         return messageMapper.deleteById(messageId) > 0;
     }
     
+    /**
+     * 批量删除消息（物理删除）
+     * @param messageIds 消息ID数组
+     * @param receiverId 接收人ID
+     * @return 是否成功
+     */
     @Override
     public boolean deleteBatch(Long[] messageIds, Long receiverId) {
         for (Long messageId : messageIds) {
@@ -180,6 +234,11 @@ public class SysMessageServiceImpl implements SysMessageService {
         return true;
     }
     
+    /**
+     * 获取未读消息数量
+     * @param receiverId 接收人ID
+     * @return 未读消息数量
+     */
     @Override
     public long getUnreadCount(Long receiverId) {
         LambdaQueryWrapper<SysMessage> wrapper = new LambdaQueryWrapper<>();
@@ -188,6 +247,14 @@ public class SysMessageServiceImpl implements SysMessageService {
         return messageMapper.selectCount(wrapper);
     }
     
+    /**
+     * 分页查询未读消息
+     * 查询结果会自动填充发送人信息
+     * @param receiverId 接收人ID
+     * @param current 当前页码
+     * @param size 每页大小
+     * @return 分页结果（包含发送人信息）
+     */
     @Override
     public Page<SysMessage> getUnreadMessages(Long receiverId, Integer current, Integer size) {
         Page<SysMessage> page = new Page<>(current, size);

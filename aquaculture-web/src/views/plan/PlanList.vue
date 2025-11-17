@@ -85,7 +85,7 @@
             <el-tag v-else-if="row.status === 1" type="success">已通过</el-tag>
             <el-tag v-else-if="row.status === 2" type="danger">已驳回</el-tag>
             <el-tag v-else-if="row.status === 3" type="primary">执行中</el-tag>
-            <el-tag v-else-if="row.status === 4" type="info">已完成</el-tag>
+            <el-tag v-else-if="row.status === 4" type="success" effect="dark">已完成</el-tag>
             <el-tag v-else-if="row.status === 5">已取消</el-tag>
           </template>
         </el-table-column>

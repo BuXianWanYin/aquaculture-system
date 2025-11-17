@@ -27,6 +27,7 @@ import java.util.Set;
 
 /**
  * 统计结果服务实现类
+ * 负责统计数据的查询、保存、更新和删除，以及各种统计报表的生成
  */
 @Service
 public class StatisticResultServiceImpl implements StatisticResultService {
@@ -43,6 +44,17 @@ public class StatisticResultServiceImpl implements StatisticResultService {
     @Autowired
     private BaseAreaMapper areaMapper;
     
+    /**
+     * 分页查询统计结果
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param statisticName 统计名称（模糊查询）
+     * @param statisticDimension 统计维度（精确查询）
+     * @param dimensionValue 维度值（精确查询）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 分页结果（按计算时间降序）
+     */
     @Override
     public Page<StatisticResult> getPage(Integer current, Integer size, 
                                          String statisticName, String statisticDimension,
@@ -70,11 +82,22 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         return statisticMapper.selectPage(page, wrapper);
     }
     
+    /**
+     * 根据ID查询统计结果
+     * @param statisticId 统计结果ID
+     * @return 统计结果信息
+     */
     @Override
     public StatisticResult getById(Long statisticId) {
         return statisticMapper.selectById(statisticId);
     }
     
+    /**
+     * 新增统计结果
+     * 如果未设置计算时间，自动设置为当前时间
+     * @param statistic 统计结果信息
+     * @return 是否成功
+     */
     @Override
     public boolean saveStatistic(StatisticResult statistic) {
         if (statistic.getCalculateTime() == null) {
@@ -83,17 +106,33 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         return statisticMapper.insert(statistic) > 0;
     }
     
+    /**
+     * 更新统计结果
+     * 自动更新修改时间为当前时间
+     * @param statistic 统计结果信息
+     * @return 是否成功
+     */
     @Override
     public boolean updateStatistic(StatisticResult statistic) {
         statistic.setUpdateTime(LocalDateTime.now());
         return statisticMapper.updateById(statistic) > 0;
     }
     
+    /**
+     * 删除统计结果（物理删除）
+     * @param statisticId 统计结果ID
+     * @return 是否成功
+     */
     @Override
     public boolean deleteStatistic(Long statisticId) {
         return statisticMapper.deleteById(statisticId) > 0;
     }
     
+    /**
+     * 批量删除统计结果（物理删除）
+     * @param statisticIds 统计结果ID数组
+     * @return 是否成功
+     */
     @Override
     public boolean deleteBatch(Long[] statisticIds) {
         for (Long statisticId : statisticIds) {
@@ -102,11 +141,19 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         return true;
     }
     
+    /**
+     * 获取月度产量趋势统计
+     * 按部门和月份分组统计产量数据，用于趋势分析
+     * 根据用户角色进行权限过滤（部门管理员只能查看本部门数据）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 月度产量趋势数据列表（每个部门一条记录，包含所有月份的数据）
+     */
     @Override
     public List<Map<String, Object>> getMonthlyYieldTrend(LocalDate startDate, LocalDate endDate) {
         List<Map<String, Object>> result = new ArrayList<>();
         
-        // 查询产量统计数据
+        // 查询产量统计数据（只查询已通过审核的）
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(YieldStatistics::getStatus, 1); // 已通过审核的产量
         
@@ -120,6 +167,7 @@ public class StatisticResultServiceImpl implements StatisticResultService {
             }
         }
         
+        // 按日期范围过滤
         if (startDate != null) {
             wrapper.ge(YieldStatistics::getStatisticsDate, startDate);
         }
@@ -147,9 +195,11 @@ public class StatisticResultServiceImpl implements StatisticResultService {
             if (stat.getStatisticsDate() != null && stat.getActualYield() != null && stat.getAreaId() != null) {
                 Long departmentId = areaToDepartmentMap.get(stat.getAreaId());
                 if (departmentId != null) {
-                    String monthKey = stat.getStatisticsDate().toString().substring(0, 7); // YYYY-MM
+                    // 提取月份（YYYY-MM格式）
+                    String monthKey = stat.getStatisticsDate().toString().substring(0, 7);
                     allMonths.add(monthKey);
                     
+                    // 累加该部门该月份的产量
                     departmentMonthlyData.putIfAbsent(departmentId, new HashMap<>());
                     Map<String, BigDecimal> monthlyData = departmentMonthlyData.get(departmentId);
                     monthlyData.put(monthKey, 
@@ -169,11 +219,19 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         return result;
     }
     
+    /**
+     * 获取品种产量占比统计
+     * 按品种分组统计产量，并计算各品种占总产量的百分比
+     * 根据用户角色进行权限过滤（部门管理员只能查看本部门数据）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 品种产量占比数据列表（包含品种ID、产量、占比）
+     */
     @Override
     public List<Map<String, Object>> getBreedYieldRatio(LocalDate startDate, LocalDate endDate) {
         List<Map<String, Object>> result = new ArrayList<>();
         
-        // 查询产量统计数据
+        // 查询产量统计数据（只查询已通过审核的）
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(YieldStatistics::getStatus, 1); // 已通过审核的产量
         
@@ -187,6 +245,7 @@ public class StatisticResultServiceImpl implements StatisticResultService {
             }
         }
         
+        // 按日期范围过滤
         if (startDate != null) {
             wrapper.ge(YieldStatistics::getStatisticsDate, startDate);
         }
@@ -196,23 +255,25 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         
         List<YieldStatistics> statistics = yieldStatisticsMapper.selectList(wrapper);
         
-        // 按品种分组统计（这里简化处理，实际应该关联品种表）
+        // 按品种分组统计产量
         Map<Long, BigDecimal> breedData = new HashMap<>();
         BigDecimal total = BigDecimal.ZERO;
         
         for (YieldStatistics stat : statistics) {
             if (stat.getBreedId() != null && stat.getActualYield() != null) {
+                // 累加各品种的产量
                 breedData.put(stat.getBreedId(), 
                     breedData.getOrDefault(stat.getBreedId(), BigDecimal.ZERO).add(stat.getActualYield()));
                 total = total.add(stat.getActualYield());
             }
         }
         
-        // 转换为列表格式
+        // 转换为列表格式，计算各品种占比
         for (Map.Entry<Long, BigDecimal> entry : breedData.entrySet()) {
             Map<String, Object> item = new HashMap<>();
             item.put("breedId", entry.getKey());
             item.put("yield", entry.getValue());
+            // 计算占比（百分比，保留4位小数）
             if (total.compareTo(BigDecimal.ZERO) > 0) {
                 item.put("ratio", entry.getValue().divide(total, 4, BigDecimal.ROUND_HALF_UP)
                     .multiply(new BigDecimal(100)).doubleValue());
@@ -225,6 +286,15 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         return result;
     }
     
+    /**
+     * 获取区域产量对比统计
+     * 按区域分组统计产量，用于区域间的产量对比分析
+     * 根据用户角色进行权限过滤（部门管理员只能查看本部门数据）
+     * 所有区域都会显示，没有产量的区域显示为0
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 区域产量对比数据列表（包含区域ID、产量）
+     */
     @Override
     public List<Map<String, Object>> getAreaYieldComparison(LocalDate startDate, LocalDate endDate) {
         List<Map<String, Object>> result = new ArrayList<>();
@@ -245,7 +315,7 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         
         List<BaseArea> allAreas = areaMapper.selectList(areaWrapper);
         
-        // 查询产量统计数据
+        // 查询产量统计数据（只查询已通过审核的）
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(YieldStatistics::getStatus, 1); // 已通过审核的产量
         
@@ -259,6 +329,7 @@ public class StatisticResultServiceImpl implements StatisticResultService {
             }
         }
         
+        // 按日期范围过滤
         if (startDate != null) {
             wrapper.ge(YieldStatistics::getStatisticsDate, startDate);
         }
@@ -273,6 +344,7 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         
         for (YieldStatistics stat : statistics) {
             if (stat.getAreaId() != null && stat.getActualYield() != null) {
+                // 累加各区域的产量
                 areaData.put(stat.getAreaId(), 
                     areaData.getOrDefault(stat.getAreaId(), BigDecimal.ZERO).add(stat.getActualYield()));
             }
@@ -289,6 +361,12 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         return result;
     }
     
+    /**
+     * 获取计划完成情况统计
+     * 统计所有计划的总数、已完成数、执行中数、待审批数，并计算完成率
+     * 根据用户角色进行权限过滤（部门管理员只能查看本部门数据）
+     * @return 计划完成情况统计数据（包含总数、已完成数、执行中数、待审批数、完成率）
+     */
     @Override
     public Map<String, Object> getPlanCompletionStats() {
         Map<String, Object> result = new HashMap<>();
@@ -302,21 +380,23 @@ public class StatisticResultServiceImpl implements StatisticResultService {
             if (areaIds != null && !areaIds.isEmpty()) {
                 planWrapper.in(AquaculturePlan::getAreaId, areaIds);
             } else {
+                // 如果没有管理的区域，返回空统计
                 result.put("totalCount", 0);
                 result.put("completedCount", 0);
                 result.put("inProgressCount", 0);
                 result.put("pendingCount", 0);
                 result.put("completionRate", 0.0);
-                return result; // 如果没有管理的区域，返回空统计
+                return result;
             }
         }
         
         List<AquaculturePlan> allPlans = planMapper.selectList(planWrapper);
         
+        // 统计各状态计划数量
         long totalCount = allPlans.size();
-        long completedCount = 0;
-        long inProgressCount = 0;
-        long pendingCount = 0;
+        long completedCount = 0;  // 已完成（status=4）
+        long inProgressCount = 0;  // 执行中（status=3）
+        long pendingCount = 0;     // 待审批（status=0）
         
         for (AquaculturePlan plan : allPlans) {
             if (plan.getStatus() != null) {
@@ -335,6 +415,7 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         result.put("inProgressCount", inProgressCount);
         result.put("pendingCount", pendingCount);
         
+        // 计算完成率（百分比）
         if (totalCount > 0) {
             result.put("completionRate", (double) completedCount / totalCount * 100);
         } else {
@@ -344,6 +425,14 @@ public class StatisticResultServiceImpl implements StatisticResultService {
         return result;
     }
     
+    /**
+     * 获取部门产量对比统计
+     * 按部门分组统计产量，用于部门间的产量对比分析
+     * 根据用户角色进行权限过滤（部门管理员只能查看本部门数据）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 部门产量对比数据列表（包含部门ID、产量）
+     */
     @Override
     public List<Map<String, Object>> getDepartmentYieldComparison(LocalDate startDate, LocalDate endDate) {
         List<Map<String, Object>> result = new ArrayList<>();
@@ -359,7 +448,7 @@ public class StatisticResultServiceImpl implements StatisticResultService {
             }
         }
         
-        // 查询产量统计数据
+        // 查询产量统计数据（只查询已通过审核的）
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(YieldStatistics::getStatus, 1); // 已通过审核的产量
         
@@ -373,6 +462,7 @@ public class StatisticResultServiceImpl implements StatisticResultService {
             }
         }
         
+        // 按日期范围过滤
         if (startDate != null) {
             wrapper.ge(YieldStatistics::getStatisticsDate, startDate);
         }
@@ -402,6 +492,7 @@ public class StatisticResultServiceImpl implements StatisticResultService {
                     if (userDepartmentId != null && !userDepartmentId.equals(departmentId)) {
                         continue;
                     }
+                    // 累加各部门的产量
                     departmentData.put(departmentId, 
                         departmentData.getOrDefault(departmentId, BigDecimal.ZERO).add(stat.getActualYield()));
                 }

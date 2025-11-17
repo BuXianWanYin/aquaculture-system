@@ -26,6 +26,11 @@ public class SalesRecordServiceImpl implements SalesRecordService {
     @Autowired
     private SalesRecordMapper recordMapper;
     
+    /**
+     * 查询所有有效的销售记录
+     * 根据用户角色进行权限过滤
+     * @return 销售记录列表
+     */
     @Override
     public List<SalesRecord> getAllRecords() {
         LambdaQueryWrapper<SalesRecord> wrapper = new LambdaQueryWrapper<>();
@@ -54,11 +59,29 @@ public class SalesRecordServiceImpl implements SalesRecordService {
         return recordMapper.selectList(wrapper);
     }
     
+    /**
+     * 根据ID查询销售记录
+     * @param salesId 销售记录ID
+     * @return 销售记录
+     */
     @Override
     public SalesRecord getById(Long salesId) {
         return recordMapper.selectById(salesId);
     }
     
+    /**
+     * 分页查询销售记录
+     * 根据用户角色进行权限过滤
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param planId 养殖计划ID
+     * @param areaId 区域ID
+     * @param breedId 品种ID
+     * @param customerId 客户ID
+     * @param paymentStatus 付款状态
+     * @param status 状态（1-正常，0-已删除）
+     * @return 分页结果
+     */
     @Override
     public Page<SalesRecord> getPage(Integer current, Integer size, Long planId, Long areaId, Long breedId, Long customerId, Integer paymentStatus, Integer status) {
         Page<SalesRecord> page = new Page<>(current, size);
@@ -108,6 +131,12 @@ public class SalesRecordServiceImpl implements SalesRecordService {
         return recordMapper.selectPage(page, wrapper);
     }
     
+    /**
+     * 新增销售记录
+     * 根据用户角色进行权限控制，自动计算总金额
+     * @param record 销售记录
+     * @return 是否成功
+     */
     @Override
     public boolean saveRecord(SalesRecord record) {
         // 普通操作员只能创建自己区域的销售记录
@@ -142,7 +171,7 @@ public class SalesRecordServiceImpl implements SalesRecordService {
             record.setCreatorId(UserContext.getCurrentUserId());
         }
         
-        // 计算总金额
+        // 计算总金额 = 销售数量 × 单价
         if (record.getSalesQuantity() != null && record.getUnitPrice() != null) {
             record.setTotalAmount(record.getSalesQuantity().multiply(record.getUnitPrice()));
         }
@@ -150,15 +179,26 @@ public class SalesRecordServiceImpl implements SalesRecordService {
         return recordMapper.insert(record) > 0;
     }
     
+    /**
+     * 更新销售记录
+     * 自动重新计算总金额
+     * @param record 销售记录
+     * @return 是否成功
+     */
     @Override
     public boolean updateRecord(SalesRecord record) {
-        // 计算总金额
+        // 计算总金额 = 销售数量 × 单价
         if (record.getSalesQuantity() != null && record.getUnitPrice() != null) {
             record.setTotalAmount(record.getSalesQuantity().multiply(record.getUnitPrice()));
         }
         return recordMapper.updateById(record) > 0;
     }
     
+    /**
+     * 删除销售记录（软删除）
+     * @param salesId 销售记录ID
+     * @return 是否成功
+     */
     @Override
     public boolean deleteRecord(Long salesId) {
         // 软删除，将状态设置为0
@@ -170,6 +210,10 @@ public class SalesRecordServiceImpl implements SalesRecordService {
         return recordMapper.updateById(record) > 0;
     }
     
+    /**
+     * 统计有效的销售记录数量
+     * @return 记录数量
+     */
     @Override
     public long count() {
         LambdaQueryWrapper<SalesRecord> wrapper = new LambdaQueryWrapper<>();
@@ -177,6 +221,15 @@ public class SalesRecordServiceImpl implements SalesRecordService {
         return recordMapper.selectCount(wrapper);
     }
     
+    /**
+     * 获取销售统计数据
+     * 根据用户角色进行权限过滤，统计总金额、总数量和记录数
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param areaId 区域ID
+     * @param breedId 品种ID
+     * @return 统计数据（包含totalAmount、totalQuantity、recordCount）
+     */
     @Override
     public Map<String, Object> getSalesStatistics(String startDate, String endDate, Long areaId, Long breedId) {
         LambdaQueryWrapper<SalesRecord> wrapper = new LambdaQueryWrapper<>();

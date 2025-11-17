@@ -23,6 +23,11 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
     private YieldStatisticsMapper statisticsMapper;
     
     
+    /**
+     * 查询所有产量统计记录
+     * 根据用户角色进行权限过滤
+     * @return 产量统计记录列表
+     */
     @Override
     public List<YieldStatistics> getAllStatistics() {
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();
@@ -50,11 +55,27 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
         return statisticsMapper.selectList(wrapper);
     }
     
+    /**
+     * 根据ID查询产量统计记录
+     * @param yieldId 产量统计ID
+     * @return 产量统计记录
+     */
     @Override
     public YieldStatistics getById(Long yieldId) {
         return statisticsMapper.selectById(yieldId);
     }
     
+    /**
+     * 分页查询产量统计记录
+     * 根据用户角色进行权限过滤
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param planId 养殖计划ID
+     * @param areaId 区域ID
+     * @param breedId 品种ID
+     * @param status 状态（0-待审核，1-已通过，2-已驳回）
+     * @return 分页结果
+     */
     @Override
     public Page<YieldStatistics> getPage(Integer current, Integer size, Long planId, Long areaId, Long breedId, Integer status) {
         Page<YieldStatistics> page = new Page<>(current, size);
@@ -96,6 +117,12 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
         return statisticsMapper.selectPage(page, wrapper);
     }
     
+    /**
+     * 新增产量统计记录
+     * 根据用户角色进行权限控制，新记录默认状态为待审核（0）
+     * @param statistics 产量统计记录
+     * @return 是否成功
+     */
     @Override
     public boolean saveStatistics(YieldStatistics statistics) {
         // 普通操作员只能创建自己区域的产量
@@ -117,7 +144,7 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
             }
         }
         
-        // 新记录默认状态为待审核
+        // 新记录默认状态为待审核（0）
         if (statistics.getStatus() == null) {
             statistics.setStatus(0);
         }
@@ -133,6 +160,12 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
         return statisticsMapper.insert(statistics) > 0;
     }
     
+    /**
+     * 更新产量统计记录
+     * 普通操作员无权编辑产量统计
+     * @param statistics 产量统计记录
+     * @return 是否成功
+     */
     @Override
     public boolean updateStatistics(YieldStatistics statistics) {
         // 普通操作员不能编辑产量统计
@@ -157,6 +190,12 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
         return statisticsMapper.updateById(statistics) > 0;
     }
     
+    /**
+     * 删除产量统计记录（物理删除）
+     * 普通操作员无权删除产量统计
+     * @param yieldId 产量统计ID
+     * @return 是否成功
+     */
     @Override
     public boolean deleteStatistics(Long yieldId) {
         // 普通操作员不能删除产量统计
@@ -177,6 +216,14 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
         return statisticsMapper.deleteById(yieldId) > 0;
     }
     
+    /**
+     * 审核产量统计记录
+     * @param yieldId 产量统计ID
+     * @param auditorId 审核人ID
+     * @param auditOpinion 审核意见
+     * @param status 审核状态（1-已通过，2-已驳回）
+     * @return 是否成功
+     */
     @Override
     public boolean auditStatistics(Long yieldId, Long auditorId, String auditOpinion, Integer status) {
         YieldStatistics statistics = getById(yieldId);
@@ -184,6 +231,7 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
             throw new RuntimeException("产量统计记录不存在");
         }
         
+        // 设置审核信息
         statistics.setAuditorId(auditorId);
         statistics.setAuditOpinion(auditOpinion);
         statistics.setAuditTime(LocalDateTime.now());
@@ -194,11 +242,21 @@ public class YieldStatisticsServiceImpl implements YieldStatisticsService {
         return result;
     }
     
+    /**
+     * 统计所有产量统计记录数量
+     * @return 记录数量
+     */
     @Override
     public long count() {
         return statisticsMapper.selectCount(null);
     }
     
+    /**
+     * 根据养殖计划ID查询产量统计记录
+     * 用于销售记录中选择产量统计时获取该计划的所有已审核通过的产量统计
+     * @param planId 养殖计划ID
+     * @return 产量统计记录列表（只包含已审核通过的记录，按统计日期倒序）
+     */
     @Override
     public List<YieldStatistics> getByPlanId(Long planId) {
         LambdaQueryWrapper<YieldStatistics> wrapper = new LambdaQueryWrapper<>();

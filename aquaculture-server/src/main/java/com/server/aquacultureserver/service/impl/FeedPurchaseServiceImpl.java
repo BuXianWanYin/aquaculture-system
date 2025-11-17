@@ -28,6 +28,11 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
     @Autowired
     private FeedInventoryService inventoryService;
     
+    /**
+     * 查询所有有效的饲料采购记录
+     * 采购和库存是公共资源，所有用户都可以查看
+     * @return 采购记录列表
+     */
     @Override
     public List<FeedPurchase> getAllPurchases() {
         LambdaQueryWrapper<FeedPurchase> wrapper = new LambdaQueryWrapper<>();
@@ -39,11 +44,26 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
         return purchaseMapper.selectList(wrapper);
     }
     
+    /**
+     * 根据ID查询采购记录
+     * @param purchaseId 采购记录ID
+     * @return 采购记录
+     */
     @Override
     public FeedPurchase getById(Long purchaseId) {
         return purchaseMapper.selectById(purchaseId);
     }
     
+    /**
+     * 分页查询饲料采购记录
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param feedName 饲料名称（模糊查询）
+     * @param feedType 饲料类型（精确查询）
+     * @param supplier 供应商（模糊查询）
+     * @param status 状态（1-正常，0-已删除）
+     * @return 分页结果
+     */
     @Override
     public Page<FeedPurchase> getPage(Integer current, Integer size, String feedName, String feedType, String supplier, Integer status) {
         Page<FeedPurchase> page = new Page<>(current, size);
@@ -70,6 +90,12 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
         return purchaseMapper.selectPage(page, wrapper);
     }
     
+    /**
+     * 新增饲料采购记录
+     * 新增采购后会自动更新饲料库存（如果为新饲料则创建库存，如果为已有饲料则累加库存）
+     * @param purchase 采购记录
+     * @return 是否成功
+     */
     @Override
     @Transactional
     public boolean savePurchase(FeedPurchase purchase) {
@@ -86,14 +112,14 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
             purchase.setCreatorId(UserContext.getCurrentUserId());
         }
         
-        // 计算总价
+        // 计算总价 = 采购数量 × 单价
         if (purchase.getPurchaseAmount() != null && purchase.getUnitPrice() != null) {
             purchase.setTotalPrice(purchase.getPurchaseAmount().multiply(purchase.getUnitPrice()));
         }
         
         boolean result = purchaseMapper.insert(purchase) > 0;
         
-        // 如果采购成功且状态为正常，则更新库存
+        // 如果采购成功且状态为正常，则自动更新库存
         if (result && purchase.getStatus() == 1) {
             updateInventoryFromPurchase(purchase);
         }
@@ -103,7 +129,9 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
     
     /**
      * 根据采购记录更新库存
-     * 按饲料名称+类型聚合，不按批次号
+     * 库存按饲料名称+类型聚合，不按批次号区分
+     * 如果该饲料已有库存，则累加数量；如果为新饲料，则创建新库存记录
+     * @param purchase 采购记录
      */
     private void updateInventoryFromPurchase(FeedPurchase purchase) {
         if (purchase.getFeedName() == null || purchase.getPurchaseAmount() == null) {
@@ -140,6 +168,12 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
         }
     }
     
+    /**
+     * 更新饲料采购记录
+     * 如果采购数量、饲料名称、类型或状态发生变化，会自动更新库存
+     * @param purchase 采购记录
+     * @return 是否成功
+     */
     @Override
     @Transactional
     public boolean updatePurchase(FeedPurchase purchase) {
@@ -149,7 +183,7 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
             throw new RuntimeException("采购记录不存在");
         }
         
-        // 计算总价
+        // 计算总价 = 采购数量 × 单价
         if (purchase.getPurchaseAmount() != null && purchase.getUnitPrice() != null) {
             purchase.setTotalPrice(purchase.getPurchaseAmount().multiply(purchase.getUnitPrice()));
         }
@@ -225,6 +259,14 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
         return result;
     }
     
+    /**
+     * 删除饲料采购记录（软删除）
+     * 删除采购记录后会自动更新库存：
+     * - 如果该饲料还有其他采购记录，只减少对应库存数量
+     * - 如果该饲料的所有采购记录都被删除，则删除对应的库存记录
+     * @param purchaseId 采购记录ID
+     * @return 是否成功
+     */
     @Override
     @Transactional
     public boolean deletePurchase(Long purchaseId) {
@@ -275,6 +317,10 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
         return purchaseMapper.updateById(purchase) > 0;
     }
     
+    /**
+     * 统计有效的饲料采购记录数量
+     * @return 记录数量
+     */
     @Override
     public long count() {
         LambdaQueryWrapper<FeedPurchase> wrapper = new LambdaQueryWrapper<>();
@@ -282,6 +328,13 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
         return purchaseMapper.selectCount(wrapper);
     }
     
+    /**
+     * 根据饲料名称和类型查询采购记录
+     * 用于饲料使用中选择批次号时获取该饲料的所有采购记录
+     * @param feedName 饲料名称
+     * @param feedType 饲料类型
+     * @return 采购记录列表（按采购日期倒序）
+     */
     @Override
     public List<FeedPurchase> getByFeedNameAndType(String feedName, String feedType) {
         LambdaQueryWrapper<FeedPurchase> wrapper = new LambdaQueryWrapper<>();

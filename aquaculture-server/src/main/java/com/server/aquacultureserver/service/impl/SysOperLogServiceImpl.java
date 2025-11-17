@@ -24,6 +24,19 @@ public class SysOperLogServiceImpl implements SysOperLogService {
     @Autowired
     private SysUserMapper userMapper;
     
+    /**
+     * 分页查询操作日志
+     * 查询结果会自动填充用户信息（用户名、真实姓名）
+     * @param current 当前页码
+     * @param size 每页大小
+     * @param userId 用户ID（精确查询）
+     * @param module 操作模块（精确查询）
+     * @param operType 操作类型（精确查询）
+     * @param keyword 关键词（模糊查询操作内容或模块）
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 分页结果（包含用户信息）
+     */
     @Override
     public Page<SysOperLog> getPage(Integer current, Integer size, 
                                      Long userId, String module, 
@@ -32,19 +45,24 @@ public class SysOperLogServiceImpl implements SysOperLogService {
         Page<SysOperLog> page = new Page<>(current, size);
         LambdaQueryWrapper<SysOperLog> wrapper = new LambdaQueryWrapper<>();
         
+        // 用户ID精确查询
         if (userId != null) {
             wrapper.eq(SysOperLog::getUserId, userId);
         }
+        // 操作模块精确查询
         if (module != null && !module.isEmpty()) {
             wrapper.eq(SysOperLog::getModule, module);
         }
+        // 操作类型精确查询
         if (operType != null && !operType.isEmpty()) {
             wrapper.eq(SysOperLog::getOperType, operType);
         }
+        // 关键词模糊查询（操作内容或模块）
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.and(w -> w.like(SysOperLog::getOperContent, keyword)
                     .or().like(SysOperLog::getModule, keyword));
         }
+        // 时间范围查询
         if (startTime != null) {
             wrapper.ge(SysOperLog::getOperTime, startTime);
         }
@@ -52,10 +70,11 @@ public class SysOperLogServiceImpl implements SysOperLogService {
             wrapper.le(SysOperLog::getOperTime, endTime);
         }
         
+        // 按操作时间倒序排列
         wrapper.orderByDesc(SysOperLog::getOperTime);
         Page<SysOperLog> result = operLogMapper.selectPage(page, wrapper);
         
-        // 填充用户信息
+        // 填充用户信息（用户名、真实姓名）
         if (result.getRecords() != null && !result.getRecords().isEmpty()) {
             for (SysOperLog log : result.getRecords()) {
                 if (log.getUserId() != null) {
@@ -71,10 +90,17 @@ public class SysOperLogServiceImpl implements SysOperLogService {
         return result;
     }
     
+    /**
+     * 根据ID查询操作日志
+     * 查询结果会自动填充用户信息（用户名、真实姓名）
+     * @param logId 日志ID
+     * @return 操作日志（包含用户信息）
+     */
     @Override
     public SysOperLog getById(Long logId) {
         SysOperLog log = operLogMapper.selectById(logId);
         if (log != null && log.getUserId() != null) {
+            // 填充用户信息
             SysUser user = userMapper.selectById(log.getUserId());
             if (user != null) {
                 log.setUsername(user.getUsername());
@@ -84,19 +110,35 @@ public class SysOperLogServiceImpl implements SysOperLogService {
         return log;
     }
     
+    /**
+     * 保存操作日志
+     * @param log 操作日志
+     * @return 是否成功
+     */
     @Override
     public boolean saveLog(SysOperLog log) {
+        // 如果未设置操作时间，则使用当前时间
         if (log.getOperTime() == null) {
             log.setOperTime(LocalDateTime.now());
         }
         return operLogMapper.insert(log) > 0;
     }
     
+    /**
+     * 删除操作日志（物理删除）
+     * @param logId 日志ID
+     * @return 是否成功
+     */
     @Override
     public boolean deleteLog(Long logId) {
         return operLogMapper.deleteById(logId) > 0;
     }
     
+    /**
+     * 批量删除操作日志（物理删除）
+     * @param logIds 日志ID数组
+     * @return 是否成功
+     */
     @Override
     public boolean deleteBatch(Long[] logIds) {
         for (Long logId : logIds) {
@@ -105,6 +147,10 @@ public class SysOperLogServiceImpl implements SysOperLogService {
         return true;
     }
     
+    /**
+     * 清空所有操作日志（物理删除）
+     * @return 是否成功
+     */
     @Override
     public boolean clearLog() {
         operLogMapper.delete(null);
