@@ -25,6 +25,7 @@ export default defineConfig(({ command, mode }) => {
     },
     server: {
       port: port,
+      open: true,  // 启动后自动打开浏览器
       proxy: {
         [apiPrefix]: {
           target: apiBaseUrl,
