@@ -128,34 +128,36 @@
           <el-input v-model="equipmentForm.maintainRecord" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item label="图片">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <el-upload
-              :action="uploadAction"
-              :headers="uploadHeaders"
-              :data="{ module: 'equipment' }"
-              :show-file-list="false"
-              :on-success="handleImageSuccess"
-              :before-upload="beforeImageUpload"
-              accept="image/*"
-            >
-              <el-button type="primary" size="small">上传图片</el-button>
-            </el-upload>
+          <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
             <el-image
               v-if="equipmentForm.imageUrl"
               :src="getImageUrl(equipmentForm.imageUrl)"
               fit="cover"
-              style="width: 100px; height: 100px; border-radius: 4px;"
+              style="width: 150px; height: 150px; border-radius: 4px; border: 1px solid #dcdfe6;"
               :preview-src-list="[getImageUrl(equipmentForm.imageUrl)]"
               :preview-teleported="true"
             />
-            <el-button
-              v-if="equipmentForm.imageUrl"
-              type="danger"
-              size="small"
-              @click="handleRemoveImage"
-            >
-              删除图片
-            </el-button>
+            <div style="display: flex; gap: 10px;">
+              <el-upload
+                :action="uploadAction"
+                :headers="uploadHeaders"
+                :data="{ module: 'equipment' }"
+                :show-file-list="false"
+                :on-success="handleImageSuccess"
+                :before-upload="beforeImageUpload"
+                accept="image/*"
+              >
+                <el-button type="primary" size="small">上传图片</el-button>
+              </el-upload>
+              <el-button
+                v-if="equipmentForm.imageUrl"
+                type="danger"
+                size="small"
+                @click="handleRemoveImage"
+              >
+                删除图片
+              </el-button>
+            </div>
           </div>
         </el-form-item>
         <el-form-item label="状态" prop="status">

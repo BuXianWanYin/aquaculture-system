@@ -37,6 +37,8 @@ public class FeedPurchase {
     
     private String batchNumber;
     
+    private String imageUrl;
+    
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate expiryDate;
     

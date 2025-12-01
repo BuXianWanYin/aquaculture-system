@@ -30,6 +30,19 @@
     
     <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
       <el-table-column type="index" label="序号" width="60" />
+      <el-table-column label="图片" width="100">
+        <template #default="{ row }">
+          <el-image
+            v-if="row.imageUrl"
+            :src="getImageUrl(row.imageUrl)"
+            :preview-src-list="[getImageUrl(row.imageUrl)]"
+            fit="cover"
+            style="width: 60px; height: 60px; border-radius: 4px;"
+            :preview-teleported="true"
+          />
+          <span v-else style="color: #909399;">暂无图片</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="feedName" label="饲料名称" min-width="180" />
       <el-table-column prop="feedType" label="饲料类型" width="140" />
       <el-table-column prop="supplier" label="供应商" min-width="150" />
@@ -179,6 +192,39 @@
         <el-form-item label="批次号">
           <el-input v-model="purchaseForm.batchNumber" placeholder="请输入批次号" />
         </el-form-item>
+        <el-form-item label="图片">
+          <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+            <el-image
+              v-if="purchaseForm.imageUrl"
+              :src="getImageUrl(purchaseForm.imageUrl)"
+              fit="cover"
+              style="width: 150px; height: 150px; border-radius: 4px; border: 1px solid #dcdfe6;"
+              :preview-src-list="[getImageUrl(purchaseForm.imageUrl)]"
+              :preview-teleported="true"
+            />
+            <div style="display: flex; gap: 10px;">
+              <el-upload
+                :action="uploadAction"
+                :headers="uploadHeaders"
+                :data="{ module: 'feed' }"
+                :show-file-list="false"
+                :on-success="handleImageSuccess"
+                :before-upload="beforeImageUpload"
+                accept="image/*"
+              >
+                <el-button type="primary" size="small">上传图片</el-button>
+              </el-upload>
+              <el-button
+                v-if="purchaseForm.imageUrl"
+                type="danger"
+                size="small"
+                @click="handleRemoveImage"
+              >
+                删除图片
+              </el-button>
+            </div>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -189,7 +235,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getFeedPurchaseList, saveFeedPurchase, updateFeedPurchase, deleteFeedPurchase, getAllFeedPurchases } from '@/api/feedPurchase'
@@ -230,10 +276,54 @@ const purchaseForm = reactive({
   totalPrice: null,
   purchaseDate: null,
   batchNumber: '',
+  imageUrl: '',
   expiryDate: null,
   status: 1,
   creatorId: null
 })
+
+const uploadAction = '/api/upload/image'
+const uploadHeaders = computed(() => {
+  const token = localStorage.getItem('token')
+  return {
+    Authorization: token ? `Bearer ${token}` : ''
+  }
+})
+
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return ''
+  if (imageUrl.startsWith('http')) return imageUrl
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+  return `${baseUrl}${imageUrl}`
+}
+
+const handleImageSuccess = (response) => {
+  if (response.code === 200 && response.data) {
+    purchaseForm.imageUrl = response.data.filePath
+    ElMessage.success('图片上传成功')
+  } else {
+    ElMessage.error(response.message || '图片上传失败')
+  }
+}
+
+const beforeImageUpload = (file) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过5MB')
+    return false
+  }
+  return true
+}
+
+const handleRemoveImage = () => {
+  purchaseForm.imageUrl = ''
+}
 
 const getPurchaseRules = () => {
   const rules = {
@@ -333,6 +423,7 @@ const handleExistingPurchaseChange = (purchaseId) => {
       purchaseForm.supplier = purchase.supplier
       purchaseForm.unitPrice = purchase.unitPrice
       purchaseForm.batchNumber = purchase.batchNumber || ''
+      purchaseForm.imageUrl = purchase.imageUrl || ''
       purchaseForm.expiryDate = purchase.expiryDate
     }
   }
@@ -363,6 +454,7 @@ const handleEdit = (row) => {
     totalPrice: row.totalPrice,
     purchaseDate: row.purchaseDate,
     batchNumber: row.batchNumber || '',
+    imageUrl: row.imageUrl || '',
     expiryDate: row.expiryDate,
     status: row.status,
     creatorId: row.creatorId
@@ -429,6 +521,7 @@ const resetForm = () => {
     totalPrice: null,
     purchaseDate: null,
     batchNumber: '',
+    imageUrl: '',
     expiryDate: null,
     status: 1,
     creatorId: null

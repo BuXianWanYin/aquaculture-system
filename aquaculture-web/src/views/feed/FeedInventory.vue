@@ -81,6 +81,15 @@
         :model="inventoryForm"
         label-width="120px"
       >
+        <el-form-item label="图片" v-if="inventoryForm.imageUrl">
+          <el-image
+            :src="getImageUrl(inventoryForm.imageUrl)"
+            fit="cover"
+            style="width: 150px; height: 150px; border-radius: 4px; border: 1px solid #dcdfe6;"
+            :preview-src-list="[getImageUrl(inventoryForm.imageUrl)]"
+            :preview-teleported="true"
+          />
+        </el-form-item>
         <el-form-item label="饲料名称">
           <el-input v-model="inventoryForm.feedName" disabled />
         </el-form-item>
@@ -221,6 +230,7 @@ const handleDetail = async (row) => {
     feedType: row.feedType,
     currentStock: row.currentStock,
     unitPrice: row.unitPrice,
+    imageUrl: row.imageUrl || '',
     status: row.status,
     creatorId: row.creatorId,
     createTime: row.createTime ? formatDateTime(row.createTime) : ''

@@ -149,6 +149,11 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
             inventory.setCurrentStock(inventory.getCurrentStock().add(purchase.getPurchaseAmount()));
             // 更新单价为最新采购的单价（或可以计算平均单价）
             inventory.setUnitPrice(purchase.getUnitPrice());
+            // 如果采购有图片且库存没有图片，则同步图片
+            if (purchase.getImageUrl() != null && !purchase.getImageUrl().isEmpty() 
+                && (inventory.getImageUrl() == null || inventory.getImageUrl().isEmpty())) {
+                inventory.setImageUrl(purchase.getImageUrl());
+            }
             inventory.setUpdateTime(LocalDateTime.now());
             inventoryService.updateInventory(inventory);
         } else {
@@ -158,6 +163,8 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
             newInventory.setFeedType(purchase.getFeedType());
             newInventory.setCurrentStock(purchase.getPurchaseAmount());
             newInventory.setUnitPrice(purchase.getUnitPrice());
+            // 同步采购的图片到库存
+            newInventory.setImageUrl(purchase.getImageUrl());
             // 库存表不再存储批次号和保质期，因为同一饲料可能有多个批次
             newInventory.setBatchNumber(null);
             newInventory.setExpiryDate(null);
@@ -213,6 +220,19 @@ public class FeedPurchaseServiceImpl implements FeedPurchaseService {
         
         if (!oldFeedName.equals(newFeedName) || !oldFeedType.equals(newFeedType)) {
             needUpdateInventory = true;
+        }
+        
+        // 如果图片变化且状态为正常，需要同步更新库存图片
+        String oldImageUrl = oldPurchase.getImageUrl() == null ? "" : oldPurchase.getImageUrl();
+        String newImageUrl = purchase.getImageUrl() == null ? "" : purchase.getImageUrl();
+        if (!oldImageUrl.equals(newImageUrl) && newStatus) {
+            // 查找对应的库存记录并更新图片
+            FeedInventory inventory = inventoryService.getByFeedNameAndType(newFeedName, newFeedType);
+            if (inventory != null) {
+                inventory.setImageUrl(newImageUrl);
+                inventory.setUpdateTime(LocalDateTime.now());
+                inventoryService.updateInventory(inventory);
+            }
         }
         
         boolean result = purchaseMapper.updateById(purchase) > 0;
