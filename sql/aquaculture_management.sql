@@ -11,7 +11,7 @@
  Target Server Version : 80041 (8.0.41)
  File Encoding         : 65001
 
- Date: 17/11/2025 21:18:09
+ Date: 01/12/2025 13:52:56
 */
 
 SET NAMES utf8mb4;
@@ -105,6 +105,7 @@ CREATE TABLE `base_breed`  (
   `suitable_temp_min` decimal(5, 2) NULL DEFAULT NULL COMMENT '适宜最低水温（℃）',
   `suitable_temp_max` decimal(5, 2) NULL DEFAULT NULL COMMENT '适宜最高水温（℃）',
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '其他属性描述',
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '图片URL',
   `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态（0-禁用，1-启用）',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -115,14 +116,14 @@ CREATE TABLE `base_breed`  (
 -- ----------------------------
 -- Records of base_breed
 -- ----------------------------
-INSERT INTO `base_breed` VALUES (15, '南美白对虾', '虾类', 120, '公斤', 25.00, 32.00, '生长速度快，适应性强，是海水养殖的主要品种之一', 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
-INSERT INTO `base_breed` VALUES (16, '斑节对虾', '虾类', 150, '公斤', 26.00, 30.00, '肉质鲜美，市场需求量大，适合高密度养殖', 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
-INSERT INTO `base_breed` VALUES (17, '草鱼', '鱼类', 365, '公斤', 20.00, 28.00, '淡水养殖的主要品种，生长周期长，肉质鲜嫩', 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
-INSERT INTO `base_breed` VALUES (18, '鲤鱼', '鱼类', 300, '公斤', 18.00, 26.00, '适应性强，抗病能力好，适合大规模养殖', 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
-INSERT INTO `base_breed` VALUES (19, '鲫鱼', '鱼类', 240, '公斤', 20.00, 28.00, '生长周期短，繁殖能力强，是淡水养殖的常见品种', 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
-INSERT INTO `base_breed` VALUES (20, '海参', '海参类', 730, '公斤', 15.00, 22.00, '营养价值高，市场价格昂贵，养殖周期较长', 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
-INSERT INTO `base_breed` VALUES (21, '扇贝', '贝类', 180, '公斤', 10.00, 20.00, '适合浅海养殖，生长速度快，经济效益好', 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
-INSERT INTO `base_breed` VALUES (22, '鲍鱼', '贝类', 540, '公斤', 18.00, 24.00, '高端水产品，养殖技术要求高，市场价值高', 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
+INSERT INTO `base_breed` VALUES (15, '南美白对虾', '虾类', 120, '公斤', 25.00, 32.00, '生长速度快，适应性强，是海水养殖的主要品种之一', '/uploads/breed/2025/12/d69ff9e5-0854-4c9f-8aa7-772b64939516.jpg', 1, '2025-11-17 04:50:11', '2025-12-01 13:43:21');
+INSERT INTO `base_breed` VALUES (16, '斑节对虾', '虾类', 150, '公斤', 26.00, 30.00, '肉质鲜美，市场需求量大，适合高密度养殖', NULL, 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
+INSERT INTO `base_breed` VALUES (17, '草鱼', '鱼类', 365, '公斤', 20.00, 28.00, '淡水养殖的主要品种，生长周期长，肉质鲜嫩', NULL, 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
+INSERT INTO `base_breed` VALUES (18, '鲤鱼', '鱼类', 300, '公斤', 18.00, 26.00, '适应性强，抗病能力好，适合大规模养殖', NULL, 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
+INSERT INTO `base_breed` VALUES (19, '鲫鱼', '鱼类', 240, '公斤', 20.00, 28.00, '生长周期短，繁殖能力强，是淡水养殖的常见品种', NULL, 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
+INSERT INTO `base_breed` VALUES (20, '海参', '海参类', 730, '公斤', 15.00, 22.00, '营养价值高，市场价格昂贵，养殖周期较长', NULL, 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
+INSERT INTO `base_breed` VALUES (21, '扇贝', '贝类', 180, '公斤', 10.00, 20.00, '适合浅海养殖，生长速度快，经济效益好', NULL, 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
+INSERT INTO `base_breed` VALUES (22, '鲍鱼', '贝类', 540, '公斤', 18.00, 24.00, '高端水产品，养殖技术要求高，市场价值高', NULL, 1, '2025-11-17 04:50:11', '2025-11-17 04:50:11');
 
 -- ----------------------------
 -- Table structure for base_department
@@ -162,6 +163,7 @@ CREATE TABLE `base_equipment`  (
   `quantity` int NOT NULL DEFAULT 1 COMMENT '数量',
   `last_maintain_time` datetime NULL DEFAULT NULL COMMENT '最后维护时间',
   `maintain_record` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '维护记录',
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '图片URL',
   `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态（0-故障，1-正常，2-维修中）',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -173,18 +175,18 @@ CREATE TABLE `base_equipment`  (
 -- ----------------------------
 -- Records of base_equipment
 -- ----------------------------
-INSERT INTO `base_equipment` VALUES (17, '增氧机', 'ZYJ-5000', '增氧设备', 13, '东海岸1号养殖池中央', 3, '2025-10-18 04:50:35', '定期检查增氧效果，更换滤网', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (18, '水质监测仪', 'SZJC-2000', '监测设备', 13, '东海岸1号养殖池东侧', 1, '2025-11-02 04:50:35', '校准传感器，清洁探头', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (19, '投饵机', 'TER-3000', '投喂设备', 13, '东海岸1号养殖池西侧', 2, '2025-10-28 04:50:35', '检查投饵精度，清理料仓', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (20, '增氧机', 'ZYJ-5000', '增氧设备', 14, '东海岸2号养殖池中央', 4, '2025-10-23 04:50:35', '检查电机运行状态', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (21, '水质监测仪', 'SZJC-2000', '监测设备', 14, '东海岸2号养殖池南侧', 1, '2025-11-07 04:50:35', '更换电池，更新固件', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (22, '投饵机', 'TER-3000', '投喂设备', 14, '东海岸2号养殖池北侧', 2, '2025-10-30 04:50:35', '调整投饵时间', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (23, '增氧机', 'ZYJ-3000', '增氧设备', 16, '西区1号鱼塘中央', 2, '2025-10-13 04:50:35', '检查增氧效果', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (24, '水质监测仪', 'SZJC-1000', '监测设备', 16, '西区1号鱼塘东侧', 1, '2025-11-05 04:50:35', '校准pH值传感器', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (25, '投饵机', 'TER-2000', '投喂设备', 16, '西区1号鱼塘西侧', 1, '2025-10-26 04:50:35', '清理投饵管道', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (26, '增氧机', 'ZYJ-3000', '增氧设备', 17, '西区2号鱼塘中央', 3, '2025-10-20 04:50:35', '更换增氧叶轮', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (27, '水质监测仪', 'SZJC-1000', '监测设备', 17, '西区2号鱼塘南侧', 1, '2025-11-09 04:50:35', '检查溶解氧传感器', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
-INSERT INTO `base_equipment` VALUES (28, '投饵机', 'TER-2000', '投喂设备', 17, '西区2号鱼塘北侧', 2, '2025-11-01 04:50:35', '调整投饵量', 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (17, '增氧机', 'ZYJ-5000', '增氧设备', 13, '东海岸1号养殖池中央', 3, '2025-10-18 04:50:35', '定期检查增氧效果，更换滤网', '/uploads/equipment/2025/12/bffc921c-0aa5-4d96-ab15-f8399490ec41.jpg', 1, '2025-11-17 04:50:35', '2025-12-01 13:45:01');
+INSERT INTO `base_equipment` VALUES (18, '水质监测仪', 'SZJC-2000', '监测设备', 13, '东海岸1号养殖池东侧', 1, '2025-11-02 04:50:35', '校准传感器，清洁探头', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (19, '投饵机', 'TER-3000', '投喂设备', 13, '东海岸1号养殖池西侧', 2, '2025-10-28 04:50:35', '检查投饵精度，清理料仓', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (20, '增氧机', 'ZYJ-5000', '增氧设备', 14, '东海岸2号养殖池中央', 4, '2025-10-23 04:50:35', '检查电机运行状态', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (21, '水质监测仪', 'SZJC-2000', '监测设备', 14, '东海岸2号养殖池南侧', 1, '2025-11-07 04:50:35', '更换电池，更新固件', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (22, '投饵机', 'TER-3000', '投喂设备', 14, '东海岸2号养殖池北侧', 2, '2025-10-30 04:50:35', '调整投饵时间', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (23, '增氧机', 'ZYJ-3000', '增氧设备', 16, '西区1号鱼塘中央', 2, '2025-10-13 04:50:35', '检查增氧效果', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (24, '水质监测仪', 'SZJC-1000', '监测设备', 16, '西区1号鱼塘东侧', 1, '2025-11-05 04:50:35', '校准pH值传感器', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (25, '投饵机', 'TER-2000', '投喂设备', 16, '西区1号鱼塘西侧', 1, '2025-10-26 04:50:35', '清理投饵管道', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (26, '增氧机', 'ZYJ-3000', '增氧设备', 17, '西区2号鱼塘中央', 3, '2025-10-20 04:50:35', '更换增氧叶轮', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (27, '水质监测仪', 'SZJC-1000', '监测设备', 17, '西区2号鱼塘南侧', 1, '2025-11-09 04:50:35', '检查溶解氧传感器', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
+INSERT INTO `base_equipment` VALUES (28, '投饵机', 'TER-2000', '投喂设备', 17, '西区2号鱼塘北侧', 2, '2025-11-01 04:50:35', '调整投饵量', NULL, 1, '2025-11-17 04:50:35', '2025-11-17 04:50:35');
 
 -- ----------------------------
 -- Table structure for customer
@@ -268,6 +270,7 @@ CREATE TABLE `disease_prevention`  (
   `effect_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '效果描述',
   `operator` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '操作人',
   `remarks` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '图片URL',
   `status` int NOT NULL DEFAULT 1 COMMENT '状态（1-正常，0-已删除）',
   `creator_id` bigint NULL DEFAULT NULL COMMENT '创建人ID',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -283,10 +286,10 @@ CREATE TABLE `disease_prevention`  (
 -- ----------------------------
 -- Records of disease_prevention
 -- ----------------------------
-INSERT INTO `disease_prevention` VALUES (1, 1, 12, 13, '使用含氯消毒剂全池泼洒，并配合使用抗病毒药物', '2025-04-02', '有效', '处理后3天，症状明显改善，死亡率下降', '张技术员', '连续用药3天，每日一次', 1, 1, '2025-11-17 05:51:17', '2025-11-17 05:51:17');
-INSERT INTO `disease_prevention` VALUES (2, 2, 13, 14, '立即更换部分水体，使用抗生素拌料投喂', '2025-05-11', '待观察', '已进行紧急处理，观察后续效果', '李技术员', '加强水质监测', 1, 1, '2025-11-17 05:51:17', '2025-11-17 05:51:17');
-INSERT INTO `disease_prevention` VALUES (3, 1, 12, 13, '加强水质管理，定期使用益生菌调节水质', '2025-04-05', '有效', '水质改善后，对虾健康状况明显好转', '张技术员', '作为后续预防措施', 1, 1, '2025-11-17 05:51:17', '2025-11-17 05:51:17');
-INSERT INTO `disease_prevention` VALUES (4, 3, 14, 16, '使用生石灰全池泼洒，配合使用中药制剂', '2025-03-16', '有效', '处理后烂鳃症状逐渐缓解', '王技术员', '每周一次，连续2周', 1, 1, '2025-11-17 05:51:17', '2025-11-17 05:51:17');
+INSERT INTO `disease_prevention` VALUES (1, 1, 12, 13, '使用含氯消毒剂全池泼洒，并配合使用抗病毒药物', '2025-04-02', '有效', '处理后3天，症状明显改善，死亡率下降', '张技术员', '连续用药3天，每日一次', NULL, 1, 1, '2025-11-17 05:51:17', '2025-11-17 05:51:17');
+INSERT INTO `disease_prevention` VALUES (2, 2, 13, 14, '立即更换部分水体，使用抗生素拌料投喂', '2025-05-11', '待观察', '已进行紧急处理，观察后续效果', '李技术员', '加强水质监测', NULL, 1, 1, '2025-11-17 05:51:17', '2025-11-17 05:51:17');
+INSERT INTO `disease_prevention` VALUES (3, 1, 12, 13, '加强水质管理，定期使用益生菌调节水质', '2025-04-05', '有效', '水质改善后，对虾健康状况明显好转', '张技术员', '作为后续预防措施', NULL, 1, 1, '2025-11-17 05:51:17', '2025-11-17 05:51:17');
+INSERT INTO `disease_prevention` VALUES (4, 3, 14, 16, '使用生石灰全池泼洒，配合使用中药制剂', '2025-03-16', '有效', '处理后烂鳃症状逐渐缓解', '王技术员', '每周一次，连续2周', NULL, 1, 1, '2025-11-17 05:51:17', '2025-11-17 05:51:17');
 
 -- ----------------------------
 -- Table structure for disease_record
@@ -304,6 +307,7 @@ CREATE TABLE `disease_record`  (
   `affected_quantity` decimal(10, 2) NULL DEFAULT NULL COMMENT '受影响数量（公斤/尾数）',
   `severity_level` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '严重程度（轻微/中等/严重）',
   `symptoms` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '症状描述',
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '图片URL',
   `status` int NOT NULL DEFAULT 1 COMMENT '状态（1-正常，0-已删除）',
   `creator_id` bigint NULL DEFAULT NULL COMMENT '创建人ID',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -318,10 +322,10 @@ CREATE TABLE `disease_record`  (
 -- ----------------------------
 -- Records of disease_record
 -- ----------------------------
-INSERT INTO `disease_record` VALUES (1, 12, 13, 15, '白斑病', '病毒性疾病', '2025-04-01', 1000.00, 500.00, '中等', '发现部分对虾出现白色斑点，活动力下降，摄食减少', 1, 1, '2025-11-17 05:51:11', '2025-11-17 05:51:11');
-INSERT INTO `disease_record` VALUES (2, 13, 14, 16, '弧菌病', '细菌性疾病', '2025-05-10', 1500.00, 800.00, '严重', '对虾出现红体症状，部分死亡，需立即处理', 1, 1, '2025-11-17 05:51:11', '2025-11-17 05:51:11');
-INSERT INTO `disease_record` VALUES (3, 14, 16, 17, '细菌性烂鳃病', '细菌性疾病', '2025-03-15', 2000.00, 1000.00, '轻微', '草鱼出现烂鳃症状，需加强水质管理', 1, 1, '2025-11-17 05:51:11', '2025-11-17 05:51:11');
-INSERT INTO `disease_record` VALUES (4, 12, 13, 15, '肠炎病', '细菌性疾病', '2025-04-20', 800.00, 300.00, '轻微', '对虾出现肠炎症状，摄食减少', 1, 1, '2025-11-17 05:51:11', '2025-11-17 05:51:11');
+INSERT INTO `disease_record` VALUES (1, 12, 13, 15, '白斑病', '病毒性疾病', '2025-04-01', 1000.00, 500.00, '中等', '发现部分对虾出现白色斑点，活动力下降，摄食减少', '/uploads/disease/2025/12/0dc3236a-f0e3-48c1-87f2-f0d996f4ae9e.jpg', 1, 1, '2025-11-17 05:51:11', '2025-12-01 13:45:30');
+INSERT INTO `disease_record` VALUES (2, 13, 14, 16, '弧菌病', '细菌性疾病', '2025-05-10', 1500.00, 800.00, '严重', '对虾出现红体症状，部分死亡，需立即处理', NULL, 1, 1, '2025-11-17 05:51:11', '2025-11-17 05:51:11');
+INSERT INTO `disease_record` VALUES (3, 14, 16, 17, '细菌性烂鳃病', '细菌性疾病', '2025-03-15', 2000.00, 1000.00, '轻微', '草鱼出现烂鳃症状，需加强水质管理', NULL, 1, 1, '2025-11-17 05:51:11', '2025-11-17 05:51:11');
+INSERT INTO `disease_record` VALUES (4, 12, 13, 15, '肠炎病', '细菌性疾病', '2025-04-20', 800.00, 300.00, '轻微', '对虾出现肠炎症状，摄食减少', NULL, 1, 1, '2025-11-17 05:51:11', '2025-11-17 05:51:11');
 
 -- ----------------------------
 -- Table structure for feed_inventory
@@ -336,6 +340,7 @@ CREATE TABLE `feed_inventory`  (
   `batch_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '批次号',
   `expiry_date` date NULL DEFAULT NULL COMMENT '保质期至',
   `warehouse_location` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '仓储位置',
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '图片URL',
   `status` int NOT NULL DEFAULT 1 COMMENT '状态（1-正常，0-已删除）',
   `creator_id` bigint NULL DEFAULT NULL COMMENT '创建人ID',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -349,10 +354,10 @@ CREATE TABLE `feed_inventory`  (
 -- ----------------------------
 -- Records of feed_inventory
 -- ----------------------------
-INSERT INTO `feed_inventory` VALUES (10, '南美白对虾专用配合饲料', '对虾专用饲料', 5278.00, 8.50, NULL, NULL, NULL, 1, 1, '2025-11-16 21:42:41', '2025-11-17 20:19:33');
-INSERT INTO `feed_inventory` VALUES (11, '斑节对虾高蛋白饲料', '对虾专用饲料', 8000.00, 9.20, NULL, NULL, NULL, 1, 1, '2025-11-16 21:42:41', '2025-11-16 21:42:41');
-INSERT INTO `feed_inventory` VALUES (12, '草鱼颗粒饲料', '淡水鱼饲料', 10000.00, 6.80, NULL, NULL, NULL, 1, 1, '2025-11-16 21:42:41', '2025-11-16 21:42:41');
-INSERT INTO `feed_inventory` VALUES (13, '通用配合饲料', '通用饲料', 3000.00, 7.50, NULL, NULL, NULL, 1, 1, '2025-11-16 21:42:41', '2025-11-16 21:42:41');
+INSERT INTO `feed_inventory` VALUES (10, '南美白对虾专用配合饲料', '对虾专用饲料', 5278.00, 8.50, NULL, NULL, NULL, '/uploads/feed/2025/12/ff782952-21f8-4dfb-b53c-173786fe03f8.jpg', 1, 1, '2025-11-16 21:42:41', '2025-12-01 13:51:29');
+INSERT INTO `feed_inventory` VALUES (11, '斑节对虾高蛋白饲料', '对虾专用饲料', 8000.00, 9.20, NULL, NULL, NULL, NULL, 1, 1, '2025-11-16 21:42:41', '2025-11-16 21:42:41');
+INSERT INTO `feed_inventory` VALUES (12, '草鱼颗粒饲料', '淡水鱼饲料', 10000.00, 6.80, NULL, NULL, NULL, NULL, 1, 1, '2025-11-16 21:42:41', '2025-11-16 21:42:41');
+INSERT INTO `feed_inventory` VALUES (13, '通用配合饲料', '通用饲料', 3000.00, 7.50, NULL, NULL, NULL, NULL, 1, 1, '2025-11-16 21:42:41', '2025-11-16 21:42:41');
 
 -- ----------------------------
 -- Table structure for feed_purchase
@@ -368,6 +373,7 @@ CREATE TABLE `feed_purchase`  (
   `total_price` decimal(12, 2) NOT NULL COMMENT '总价（元）',
   `purchase_date` date NOT NULL COMMENT '采购日期',
   `batch_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '批次号',
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '图片URL',
   `expiry_date` date NULL DEFAULT NULL COMMENT '保质期至',
   `status` int NOT NULL DEFAULT 1 COMMENT '状态（1-正常，0-已删除）',
   `creator_id` bigint NULL DEFAULT NULL COMMENT '创建人ID',
@@ -382,14 +388,14 @@ CREATE TABLE `feed_purchase`  (
 -- ----------------------------
 -- Records of feed_purchase
 -- ----------------------------
-INSERT INTO `feed_purchase` VALUES (1, '南美白对虾专用配合饲料', '对虾专用饲料', '青岛水产饲料有限公司', 5000.00, 8.50, 42500.00, '2025-01-15', 'BATCH2025011501', '2026-07-15', 1, 1, '2025-11-17 05:42:41', '2025-11-17 05:42:41');
-INSERT INTO `feed_purchase` VALUES (2, '斑节对虾高蛋白饲料', '对虾专用饲料', '青岛水产饲料有限公司', 8000.00, 9.20, 73600.00, '2025-02-10', 'BATCH2025021001', '2026-08-10', 1, 1, '2025-11-17 05:42:41', '2025-11-17 05:42:41');
-INSERT INTO `feed_purchase` VALUES (3, '草鱼颗粒饲料', '淡水鱼饲料', '山东水产饲料厂', 10000.00, 6.80, 68000.00, '2025-01-20', 'BATCH2025012001', '2026-07-20', 1, 1, '2025-11-17 05:42:41', '2025-11-17 05:42:41');
-INSERT INTO `feed_purchase` VALUES (4, '通用配合饲料', '通用饲料', '青岛水产饲料有限公司', 3000.00, 7.50, 22500.00, '2025-03-01', 'BATCH2025030101', '2026-09-01', 1, 1, '2025-11-17 05:42:41', '2025-11-17 05:42:41');
-INSERT INTO `feed_purchase` VALUES (5, '测试', '对虾专用饲料', '测试', 222.00, 22.00, 4884.00, '2025-11-17', '222', '2025-11-19', 0, 1, '2025-11-17 18:52:02', '2025-11-17 18:52:01');
-INSERT INTO `feed_purchase` VALUES (6, '南美白对虾专用配合饲料', '对虾专用饲料', '青岛水产饲料有限公司', 300.00, 8.50, 2550.00, '2025-11-17', 'BATCH2025011502', '2026-07-15', 0, 1, '2025-11-17 19:06:10', '2025-11-17 19:06:10');
-INSERT INTO `feed_purchase` VALUES (7, '南美白对虾专用配合饲料', '对虾专用饲料', '青岛水产饲料有限公司', 500.00, 8.50, 4250.00, '2025-11-18', 'BATCH2025011523', '2026-07-15', 0, 1, '2025-11-17 19:08:02', '2025-11-17 19:11:08');
-INSERT INTO `feed_purchase` VALUES (8, '南美白对虾专用配合饲料', '对虾专用饲料', '青岛水产饲料有限公司', 300.00, 8.50, 2550.00, '2025-11-17', 'BATCH2025011502', '2026-07-15', 1, 1, '2025-11-17 19:22:37', '2025-11-17 19:22:36');
+INSERT INTO `feed_purchase` VALUES (1, '南美白对虾专用配合饲料', '对虾专用饲料', '青岛水产饲料有限公司', 5000.00, 8.50, 42500.00, '2025-01-15', 'BATCH2025011501', NULL, '2026-07-15', 1, 1, '2025-11-17 05:42:41', '2025-11-17 05:42:41');
+INSERT INTO `feed_purchase` VALUES (2, '斑节对虾高蛋白饲料', '对虾专用饲料', '青岛水产饲料有限公司', 8000.00, 9.20, 73600.00, '2025-02-10', 'BATCH2025021001', NULL, '2026-08-10', 1, 1, '2025-11-17 05:42:41', '2025-11-17 05:42:41');
+INSERT INTO `feed_purchase` VALUES (3, '草鱼颗粒饲料', '淡水鱼饲料', '山东水产饲料厂', 10000.00, 6.80, 68000.00, '2025-01-20', 'BATCH2025012001', NULL, '2026-07-20', 1, 1, '2025-11-17 05:42:41', '2025-11-17 05:42:41');
+INSERT INTO `feed_purchase` VALUES (4, '通用配合饲料', '通用饲料', '青岛水产饲料有限公司', 3000.00, 7.50, 22500.00, '2025-03-01', 'BATCH2025030101', NULL, '2026-09-01', 1, 1, '2025-11-17 05:42:41', '2025-11-17 05:42:41');
+INSERT INTO `feed_purchase` VALUES (5, '测试', '对虾专用饲料', '测试', 222.00, 22.00, 4884.00, '2025-11-17', '222', NULL, '2025-11-19', 0, 1, '2025-11-17 18:52:02', '2025-11-17 18:52:01');
+INSERT INTO `feed_purchase` VALUES (6, '南美白对虾专用配合饲料', '对虾专用饲料', '青岛水产饲料有限公司', 300.00, 8.50, 2550.00, '2025-11-17', 'BATCH2025011502', NULL, '2026-07-15', 0, 1, '2025-11-17 19:06:10', '2025-11-17 19:06:10');
+INSERT INTO `feed_purchase` VALUES (7, '南美白对虾专用配合饲料', '对虾专用饲料', '青岛水产饲料有限公司', 500.00, 8.50, 4250.00, '2025-11-18', 'BATCH2025011523', NULL, '2026-07-15', 0, 1, '2025-11-17 19:08:02', '2025-11-17 19:11:08');
+INSERT INTO `feed_purchase` VALUES (8, '南美白对虾专用配合饲料', '对虾专用饲料', '青岛水产饲料有限公司', 300.00, 8.50, 2550.00, '2025-11-17', 'BATCH2025011502', '/uploads/feed/2025/12/ff782952-21f8-4dfb-b53c-173786fe03f8.jpg', '2026-07-15', 1, 1, '2025-11-17 19:22:37', '2025-12-01 13:51:28');
 
 -- ----------------------------
 -- Table structure for feed_usage
@@ -481,7 +487,7 @@ CREATE TABLE `medicine_inventory`  (
   INDEX `idx_medicine_name`(`medicine_name` ASC) USING BTREE,
   INDEX `idx_medicine_type`(`medicine_type` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '药品库存表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '药品库存表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of medicine_inventory
@@ -720,7 +726,7 @@ CREATE TABLE `sys_oper_log`  (
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_module`(`module` ASC) USING BTREE,
   INDEX `idx_oper_time`(`oper_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 237 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '操作日志表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 247 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '操作日志表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_oper_log
@@ -816,6 +822,16 @@ INSERT INTO `sys_oper_log` VALUES (233, 1, '养殖计划管理', '修改', '修�
 INSERT INTO `sys_oper_log` VALUES (234, 1, '养殖计划管理', '修改', '修改养殖计划: 西区3号鱼塘鲫鱼养殖计划', '2025-11-17 20:20:23', '127.0.0.1', 1, NULL, NULL);
 INSERT INTO `sys_oper_log` VALUES (235, 1, '养殖计划管理', '修改', '修改养殖计划: 东海岸深水区海参养殖计划', '2025-11-17 20:20:27', '127.0.0.1', 1, NULL, NULL);
 INSERT INTO `sys_oper_log` VALUES (236, 1, '养殖计划管理', '修改', '修改养殖计划: 东海岸3号池扇贝养殖计划', '2025-11-17 20:20:30', '127.0.0.1', 1, NULL, NULL);
+INSERT INTO `sys_oper_log` VALUES (237, 1, '用户管理', '登录', '用户登录系统：admin', '2025-12-01 13:21:58', '127.0.0.1', 1, NULL, NULL);
+INSERT INTO `sys_oper_log` VALUES (238, 1, '用户管理', '登录', '用户登录系统：admin', '2025-12-01 13:36:54', '127.0.0.1', 1, NULL, NULL);
+INSERT INTO `sys_oper_log` VALUES (239, 1, '系统管理', '新增', '执行操作: /api/upload/image', '2025-12-01 13:43:18', '127.0.0.1', 1, NULL, NULL);
+INSERT INTO `sys_oper_log` VALUES (240, 1, '养殖品种管理', '修改', '修改养殖品种: 南美白对虾', '2025-12-01 13:43:21', '127.0.0.1', 1, NULL, NULL);
+INSERT INTO `sys_oper_log` VALUES (241, 1, '系统管理', '新增', '执行操作: /api/upload/image', '2025-12-01 13:45:00', '127.0.0.1', 1, NULL, NULL);
+INSERT INTO `sys_oper_log` VALUES (242, 1, '设备管理', '修改', '修改设备信息: 增氧机', '2025-12-01 13:45:01', '127.0.0.1', 1, NULL, NULL);
+INSERT INTO `sys_oper_log` VALUES (243, 1, '系统管理', '新增', '执行操作: /api/upload/image', '2025-12-01 13:45:29', '127.0.0.1', 1, NULL, NULL);
+INSERT INTO `sys_oper_log` VALUES (244, 1, '病害防控管理', '修改', '修改病害记录', '2025-12-01 13:45:30', '127.0.0.1', 1, NULL, NULL);
+INSERT INTO `sys_oper_log` VALUES (245, 1, '系统管理', '新增', '执行操作: /api/upload/image', '2025-12-01 13:51:27', '127.0.0.1', 1, NULL, NULL);
+INSERT INTO `sys_oper_log` VALUES (246, 1, '饲料管理', '修改', '修改饲料采购记录', '2025-12-01 13:51:29', '127.0.0.1', 1, NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_permission
@@ -832,7 +848,7 @@ CREATE TABLE `sys_permission`  (
   PRIMARY KEY (`permission_id`) USING BTREE,
   UNIQUE INDEX `uk_permission_code`(`permission_code` ASC) USING BTREE,
   INDEX `idx_module`(`module` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 295 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '权限表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 293 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '权限表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_permission

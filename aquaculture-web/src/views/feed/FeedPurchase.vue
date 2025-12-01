@@ -202,7 +202,7 @@
               :preview-src-list="[getImageUrl(purchaseForm.imageUrl)]"
               :preview-teleported="true"
             />
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 10px; align-items: center;">
               <el-upload
                 :action="uploadAction"
                 :headers="uploadHeaders"
