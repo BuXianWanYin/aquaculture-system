@@ -48,6 +48,19 @@
     
     <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
       <el-table-column type="index" label="序号" width="60" />
+      <el-table-column label="图片" width="100">
+        <template #default="{ row }">
+          <el-image
+            v-if="row.imageUrl"
+            :src="getImageUrl(row.imageUrl)"
+            :preview-src-list="[getImageUrl(row.imageUrl)]"
+            fit="cover"
+            style="width: 60px; height: 60px; border-radius: 4px;"
+            :preview-teleported="true"
+          />
+          <span v-else style="color: #909399;">暂无图片</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="planId" label="养殖计划" min-width="150">
         <template #default="{ row }">
           {{ getPlanName(row.planId) }}
@@ -192,6 +205,37 @@
         <el-form-item label="症状描述">
           <el-input v-model="recordForm.symptoms" type="textarea" :rows="4" placeholder="请输入症状描述" />
         </el-form-item>
+        <el-form-item label="图片">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <el-upload
+              :action="uploadAction"
+              :headers="uploadHeaders"
+              :data="{ module: 'disease' }"
+              :show-file-list="false"
+              :on-success="handleImageSuccess"
+              :before-upload="beforeImageUpload"
+              accept="image/*"
+            >
+              <el-button type="primary" size="small">上传图片</el-button>
+            </el-upload>
+            <el-image
+              v-if="recordForm.imageUrl"
+              :src="getImageUrl(recordForm.imageUrl)"
+              fit="cover"
+              style="width: 100px; height: 100px; border-radius: 4px;"
+              :preview-src-list="[getImageUrl(recordForm.imageUrl)]"
+              :preview-teleported="true"
+            />
+            <el-button
+              v-if="recordForm.imageUrl"
+              type="danger"
+              size="small"
+              @click="handleRemoveImage"
+            >
+              删除图片
+            </el-button>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -202,7 +246,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getDiseaseRecordList, saveDiseaseRecord, updateDiseaseRecord, deleteDiseaseRecord } from '@/api/diseaseRecord'
@@ -247,9 +291,53 @@ const recordForm = reactive({
   affectedQuantity: null,
   severityLevel: '',
   symptoms: '',
+  imageUrl: '',
   status: 1,
   creatorId: null
 })
+
+const uploadAction = '/api/upload/image'
+const uploadHeaders = computed(() => {
+  const token = localStorage.getItem('token')
+  return {
+    Authorization: token ? `Bearer ${token}` : ''
+  }
+})
+
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return ''
+  if (imageUrl.startsWith('http')) return imageUrl
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+  return `${baseUrl}${imageUrl}`
+}
+
+const handleImageSuccess = (response) => {
+  if (response.code === 200 && response.data) {
+    recordForm.imageUrl = response.data.filePath
+    ElMessage.success('图片上传成功')
+  } else {
+    ElMessage.error(response.message || '图片上传失败')
+  }
+}
+
+const beforeImageUpload = (file) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过5MB')
+    return false
+  }
+  return true
+}
+
+const handleRemoveImage = () => {
+  recordForm.imageUrl = ''
+}
 
 const recordRules = {
   planId: [
@@ -374,6 +462,7 @@ const handleEdit = (row) => {
     affectedQuantity: row.affectedQuantity,
     severityLevel: row.severityLevel || '',
     symptoms: row.symptoms || '',
+    imageUrl: row.imageUrl || '',
     status: row.status,
     creatorId: row.creatorId
   })
@@ -433,6 +522,7 @@ const resetForm = () => {
     affectedQuantity: null,
     severityLevel: '',
     symptoms: '',
+    imageUrl: '',
     status: 1,
     creatorId: null
   })

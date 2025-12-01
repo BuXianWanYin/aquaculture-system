@@ -38,6 +38,8 @@ public class DiseasePrevention {
     
     private String remarks;
     
+    private String imageUrl;
+    
     private Integer status;
     
     private Long creatorId;

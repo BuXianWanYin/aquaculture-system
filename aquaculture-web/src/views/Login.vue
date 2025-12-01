@@ -1,5 +1,5 @@
 <template>
-  <div class="login-container">
+  <div class="login-container" :style="{ backgroundImage: `url(${loginBg})` }">
     <div class="login-box">
       <div class="login-header">
         <h1>水产养殖计划与产量统计系统</h1>
@@ -59,6 +59,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import loginBg from '@/assets/images/loginBg.jpg'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -111,7 +112,9 @@ const handleRegister = () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   position: relative;
 }
 
@@ -122,19 +125,20 @@ const handleRegister = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(33, 150, 243, 0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-  opacity: 0.3;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 0;
 }
 
 .login-box {
   width: 420px;
   padding: 50px 40px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(33, 150, 243, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 1;
-  border: 1px solid rgba(33, 150, 243, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
 }
 
 .login-header {
@@ -150,6 +154,7 @@ const handleRegister = () => {
   margin-bottom: 10px;
   font-weight: 600;
   letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .login-header p {

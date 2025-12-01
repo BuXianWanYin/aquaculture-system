@@ -32,6 +32,8 @@ public class BaseBreed {
     
     private String description;
     
+    private String imageUrl;
+    
     private Integer status;
     
     private LocalDateTime createTime;

@@ -33,6 +33,8 @@ public class BaseEquipment {
     
     private String maintainRecord;
     
+    private String imageUrl;
+    
     private Integer status;
     
     private LocalDateTime createTime;

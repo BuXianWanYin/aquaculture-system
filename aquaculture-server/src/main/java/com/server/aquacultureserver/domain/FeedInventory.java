@@ -33,6 +33,10 @@ public class FeedInventory {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate expiryDate;
     
+    private String warehouseLocation;
+    
+    private String imageUrl;
+    
     private Integer status;
     
     private Long creatorId;

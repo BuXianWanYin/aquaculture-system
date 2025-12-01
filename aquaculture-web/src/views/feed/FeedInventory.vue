@@ -23,6 +23,19 @@
     
     <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
       <el-table-column type="index" label="序号" width="60" />
+      <el-table-column label="图片" width="100">
+        <template #default="{ row }">
+          <el-image
+            v-if="row.imageUrl"
+            :src="getImageUrl(row.imageUrl)"
+            :preview-src-list="[getImageUrl(row.imageUrl)]"
+            fit="cover"
+            style="width: 60px; height: 60px; border-radius: 4px;"
+            :preview-teleported="true"
+          />
+          <span v-else style="color: #909399;">暂无图片</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="feedName" label="饲料名称" min-width="180" />
       <el-table-column prop="feedType" label="饲料类型" width="140" />
       <el-table-column prop="currentStock" label="当前库存(kg)" width="140">
@@ -131,6 +144,13 @@ import { getFeedInventoryList } from '@/api/feedInventory'
 import { getFeedPurchasesByFeed } from '@/api/feedPurchase'
 import { formatDateTime, formatDate } from '@/utils/date'
 import { usePermission } from '@/composables/usePermission'
+
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return ''
+  if (imageUrl.startsWith('http')) return imageUrl
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+  return `${baseUrl}${imageUrl}`
+}
 
 const { hasPermission } = usePermission()
 

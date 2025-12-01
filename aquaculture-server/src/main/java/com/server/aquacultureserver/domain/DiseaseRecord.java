@@ -41,6 +41,8 @@ public class DiseaseRecord {
     
     private String symptoms;
     
+    private String imageUrl;
+    
     private Integer status;
     
     private Long creatorId;

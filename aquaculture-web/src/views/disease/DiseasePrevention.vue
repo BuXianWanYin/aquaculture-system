@@ -37,6 +37,19 @@
     
     <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
       <el-table-column type="index" label="序号" width="60" />
+      <el-table-column label="图片" width="100">
+        <template #default="{ row }">
+          <el-image
+            v-if="row.imageUrl"
+            :src="getImageUrl(row.imageUrl)"
+            :preview-src-list="[getImageUrl(row.imageUrl)]"
+            fit="cover"
+            style="width: 60px; height: 60px; border-radius: 4px;"
+            :preview-teleported="true"
+          />
+          <span v-else style="color: #909399;">暂无图片</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="recordId" label="病害记录" min-width="150">
         <template #default="{ row }">
           {{ getDiseaseRecordName(row.recordId) }}
@@ -154,6 +167,37 @@
         <el-form-item label="备注">
           <el-input v-model="preventionForm.remarks" type="textarea" :rows="2" placeholder="请输入备注" />
         </el-form-item>
+        <el-form-item label="图片">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <el-upload
+              :action="uploadAction"
+              :headers="uploadHeaders"
+              :data="{ module: 'disease' }"
+              :show-file-list="false"
+              :on-success="handleImageSuccess"
+              :before-upload="beforeImageUpload"
+              accept="image/*"
+            >
+              <el-button type="primary" size="small">上传图片</el-button>
+            </el-upload>
+            <el-image
+              v-if="preventionForm.imageUrl"
+              :src="getImageUrl(preventionForm.imageUrl)"
+              fit="cover"
+              style="width: 100px; height: 100px; border-radius: 4px;"
+              :preview-src-list="[getImageUrl(preventionForm.imageUrl)]"
+              :preview-teleported="true"
+            />
+            <el-button
+              v-if="preventionForm.imageUrl"
+              type="danger"
+              size="small"
+              @click="handleRemoveImage"
+            >
+              删除图片
+            </el-button>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -164,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getDiseasePreventionList, saveDiseasePrevention, updateDiseasePrevention, deleteDiseasePrevention, getDiseasePreventionsByRecordId } from '@/api/diseasePrevention'
@@ -208,9 +252,53 @@ const preventionForm = reactive({
   effectDescription: '',
   operator: '',
   remarks: '',
+  imageUrl: '',
   status: 1,
   creatorId: null
 })
+
+const uploadAction = '/api/upload/image'
+const uploadHeaders = computed(() => {
+  const token = localStorage.getItem('token')
+  return {
+    Authorization: token ? `Bearer ${token}` : ''
+  }
+})
+
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return ''
+  if (imageUrl.startsWith('http')) return imageUrl
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+  return `${baseUrl}${imageUrl}`
+}
+
+const handleImageSuccess = (response) => {
+  if (response.code === 200 && response.data) {
+    preventionForm.imageUrl = response.data.filePath
+    ElMessage.success('图片上传成功')
+  } else {
+    ElMessage.error(response.message || '图片上传失败')
+  }
+}
+
+const beforeImageUpload = (file) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过5MB')
+    return false
+  }
+  return true
+}
+
+const handleRemoveImage = () => {
+  preventionForm.imageUrl = ''
+}
 
 const preventionRules = {
   recordId: [
@@ -344,6 +432,7 @@ const handleEdit = (row) => {
     effectDescription: row.effectDescription || '',
     operator: row.operator || '',
     remarks: row.remarks || '',
+    imageUrl: row.imageUrl || '',
     status: row.status,
     creatorId: row.creatorId
   })
@@ -402,6 +491,7 @@ const resetForm = () => {
     effectDescription: '',
     operator: '',
     remarks: '',
+    imageUrl: '',
     status: 1,
     creatorId: null
   })
